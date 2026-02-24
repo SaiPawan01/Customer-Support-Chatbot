@@ -26,15 +26,14 @@ class Message(models.Model):
     SENDER_CHOICES = [
         ("user", "User"),
         ("assistant", "Assistant"),
-        ("system", "System"),
     ]
 
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE,related_name="messages")
     sender = models.CharField(max_length=20,choices=SENDER_CHOICES)
-    content = models.TextField()
+    message = models.TextField()
 
     confidence_score = models.FloatField(blank=True, null=True)
-    source = models.TextField()
+    source = models.TextField(blank=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

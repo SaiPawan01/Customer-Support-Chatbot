@@ -1,8 +1,9 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from django.core.exceptions import ObjectDoesNotExist
 
 from .models import Conversation, Message
@@ -12,7 +13,6 @@ from .utils.chatbot_logic import get_relevant_chunks, get_bot_reply
 # Create your views here.
 class CreateConversationView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         try:
             serializer = ConversationSerializer(data=request.data)
@@ -118,16 +118,249 @@ class DeleteConversationView(APIView):
 
 
 
+
+
 class CreateMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        context = get_relevant_chunks("what is complaint management system ?")
-        res = get_bot_reply(request.data.get('content'),context)
-        return Response({
-            "success": True,
-            'result': res,
-        })
+        try:
+            user_query = request.data.get("message")
+            conversation_id = request.data.get("conversation_id")
+
+            if not user_query:
+                return Response(
+                    {"error": "Message field is required."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if not conversation_id:
+                return Response(
+                    {"error": "Conversation ID is required."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            conversation = get_object_or_404(
+                Conversation,
+                id=conversation_id
+            )
+
+            with transaction.atomic():
+                Message.objects.create(
+                    conversation=conversation,
+                    sender="user",
+                    message=user_query
+                )
+
+
+                context = get_relevant_chunks(user_query)
+
+                messages = (
+                    Message.objects
+                    .filter(
+                        conversation_id=conversation_id,
+                        conversation__user=request.user
+                    )
+                    .order_by("-created_at")[:20]
+                )
+
+                # Reverse to chronological order
+                messages = reversed(messages)
+
+                history = [
+                    {
+                        "role": "user" if msg.sender == "user" else "assistant",
+                        "content": msg.message
+                    }
+                    for msg in messages
+                ]
+
+                print(history)
+
+
+                bot_reply, sources = get_bot_reply(
+                    user_query,
+                    context,
+                    history,
+                )
+
+
+                Message.objects.create(
+                    conversation=conversation,
+                    sender="assistant",
+                    message=bot_reply,
+                )
+
+            return Response(
+                {
+                    "success": True,
+                    "result": bot_reply
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except DatabaseError:
+            return Response(
+                {"error": "Database error occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "error": "Unexpected error occurred.",
+                    "details": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+
+
+class FetchAllMessage(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            conversation_id = request.data.get("conversation_id")
+
+
+            if not conversation_id:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Conversation ID is required."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+
+            conversation = get_object_or_404(
+                Conversation,
+                id=conversation_id,
+                user=request.user
+            )
+
+
+            messages = (
+                Message.objects
+                .filter(conversation=conversation)
+                .order_by("-created_at")
+            )
+
+            # If no messages found
+            if not messages.exists():
+                return Response(
+                    {
+                        "success": True,
+                        "message": "No messages found.",
+                        "data": []
+                    },
+                    status=status.HTTP_200_OK
+                )
+
+            # Reverse to chronological order
+            messages = reversed(messages)
+
+            history = [
+                {
+                    'id': msg.id,
+                    "role": msg.sender,
+                    "content": msg.message,
+                    "created_at": msg.created_at
+                }
+                for msg in messages
+            ]
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Successfully fetched the messages.",
+                    "data": history
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except DatabaseError:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Database error occurred while fetching messages."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "message": "An unexpected error occurred.",
+                    "error": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+class FetchAllConversations(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            conversations = (
+                Conversation.objects
+                .filter(user=request.user)
+                .order_by("-created_at")
+            )
+
+            if not conversations.exists():
+                return Response(
+                    {
+                        "success": True,
+                        "message": "No conversations found.",
+                        "data": []
+                    },
+                    status=status.HTTP_200_OK
+                )
+
+            data = [
+                {
+                    "id": doc.id,
+                    "title": doc.title,
+                    "created_at": doc.created_at
+                }
+                for doc in conversations
+            ]
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Conversations fetched successfully.",
+                    "data": data
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except DatabaseError:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Database error occurred while fetching conversations."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "message": "An unexpected error occurred.",
+                    "error": str(e)  # remove in production
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 
 

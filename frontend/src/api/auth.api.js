@@ -5,13 +5,13 @@ export const registerUser = (data) => {
 }
 
 export const loginUser = (data) => {
-    return api.post("api/login/", data,{withCredentials: true});
+    return api.post("api/login/", data, { withCredentials: true });
 }
 
 export const verifyToken = (access_token) => {
     const token = access_token;
     return api.get("api/verify-token/", {
-        headers:{
+        headers: {
             Authorization: `Bearer ${token}`
         },
         withCredentials: true
