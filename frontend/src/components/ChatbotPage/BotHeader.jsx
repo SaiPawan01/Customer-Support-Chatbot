@@ -1,7 +1,11 @@
-import React from 'react';
-import {Settings, Menu} from 'lucide-react'
+import React, { useState } from 'react';
+import { Menu, Trash2} from 'lucide-react'
 
-function BotHeader({setShowSettings, setSidebarOpen, sidebarOpen, showSettings}){
+import Modal from './Modal';
+
+function BotHeader({setShowSettings, setSidebarOpen, sidebarOpen, showSettings, activeConversation, conversations, setConversations}){
+    const [modalState, setModalState] = useState(false);
+
     return <>
     <div className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -20,9 +24,13 @@ function BotHeader({setShowSettings, setSidebarOpen, sidebarOpen, showSettings})
             onClick={() => setShowSettings(!showSettings)}
             className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700 transition"
           >
-            <Settings className="w-6 h-6" />
+            <Trash2 onClick={() => setModalState(!modalState)} className="w-6 h-6" />
           </button>
         </div>
+
+
+         <Modal isOpen={modalState} activeConversation={activeConversation} modalState={modalState} setModalState={setModalState} conversations={conversations} setConversations={setConversations} />
+        
     </>
 }
 

@@ -1,6 +1,10 @@
 import React from 'react'
 import { Paperclip, FileText, ThumbsUp, ThumbsDown, Copy } from 'lucide-react'
 import { createConversation } from '../../api/bot.api';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+
 function MessageArea({ messages,
     loading,
     messagesEndRef,
@@ -12,6 +16,10 @@ function MessageArea({ messages,
     setNewConversation,
     setConversations,
     setActiveConversation }) {
+
+    function formatLLM(text) {
+        return text.replace(/\n{3,}/g, "\n\n");
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -72,7 +80,14 @@ function MessageArea({ messages,
                             } px-6 py-4 space-y-3`}
                     >
                         {/* Message Text */}
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    <div className="text-sm leading-relaxed [&>p]:my-2 
+                                                            [&>h1]:my-3 
+                                                            [&>h2]:my-3 
+                                                            [&>ul]:my-2 ">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content}
+                        </ReactMarkdown>
+                    </div>
 
                         {/* File Attachment (if any) */}
                         {message.file && (

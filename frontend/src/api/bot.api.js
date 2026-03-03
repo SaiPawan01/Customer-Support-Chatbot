@@ -29,3 +29,15 @@ export const createConversation = (data) => {
         });
     }
 }
+
+
+export const deleteConversation = (id) => {
+    const token = localStorage.getItem('access_token')
+    if(token){
+        return api.delete(`api/chatbot/delete/conversation/${id}`,{
+            headers:{
+                Authorization: `Bearer ${token}`
+            }
+        })
+    }
+}

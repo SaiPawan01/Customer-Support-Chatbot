@@ -9,21 +9,6 @@ import { fetchALLConversations } from "../../api/sidebar.api.js";
 function SidebarWindow({sidebarOpen, fetchMessages, activeConversation, setActiveConversation, setNewConversation, conversations, setConversations}) {
     const navigate = useNavigate();
 
-//     const startNewChat = () => {
-//     setMessages([
-//       {
-//         id: 1,
-//         text: "Hello! I'm SupportBot AI. How can I help you today?",
-//         sender: 'bot',
-//         timestamp: new Date(),
-//         confidence: null,
-//         sources: []
-//       }
-//     ]);
-//     setFeedbackGiven({});
-//   };
-
-
     const handleLogout = async () => {
         try {
             const response = await logoutUser();

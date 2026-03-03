@@ -49,6 +49,9 @@ export default function ChatbotInterface() {
     }
   }
 
+
+  
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
@@ -63,8 +66,6 @@ export default function ChatbotInterface() {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setLoading(true);
-
-
     try{
       const response = await getBotReply(userMessage)
       console.log(response)
@@ -119,12 +120,12 @@ export default function ChatbotInterface() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} showSetting={showSettings} />
+        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} showSetting={showSettings} activeConversation={activeConversation} conversations={conversations} setConversations={setConversations} />
 
         {/* Messages Area */}
         <MessageArea messages={messages} loading={loading} messagesEndRef={messagesEndRef} handleFeedback={handleFeedback} feedbackGiven={feedbackGiven} handleCopyMessage={handleCopyMessage} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} />
 
-        {/* Input Area */}
+        {/* Inpuzxsxt Area */}
         <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} />
       </div>
     </div>
