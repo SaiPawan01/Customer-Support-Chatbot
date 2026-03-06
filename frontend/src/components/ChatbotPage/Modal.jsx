@@ -3,19 +3,20 @@ import { deleteConversation } from "../../api/bot.api";
 
 
 
-export default function Modal({ isOpen, activeConversation, modalState, setModalState, conversation, setConversation }) {
+export default function Modal({ isOpen, activeConversation, setModalState, setConversations, setActiveConversation }) {
     
     const handleClose = () => {
-        setModalState(!modalState)
+        setModalState(prev => !prev)
     }
     const handleconform = async () => {
         try{
             await deleteConversation(activeConversation);
             setModalState(prev => !prev)
-            // const arr = conversation.filter((conversation) => conversation.id !== activeConversation)
-            // console.log(arr)
-            // console.log(activeConversation)
-            // setConversation(arr)
+            setConversations(prevConversations =>
+            prevConversations.filter(
+                (conversation) => conversation.id !== activeConversation
+            ));
+            setActiveConversation(null);
         }
         catch(error){ 
             console.log(`something went wrong while deleting the conversation ${error}`)

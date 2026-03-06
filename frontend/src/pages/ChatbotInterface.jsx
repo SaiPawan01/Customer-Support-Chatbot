@@ -34,8 +34,6 @@ export default function ChatbotInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  
-
 
   const fetchMessages = async (id) => {
     try {
@@ -50,7 +48,7 @@ export default function ChatbotInterface() {
   }
 
 
-  
+
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -120,10 +118,10 @@ export default function ChatbotInterface() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} showSetting={showSettings} activeConversation={activeConversation} conversations={conversations} setConversations={setConversations} />
+        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} />
 
         {/* Messages Area */}
-        <MessageArea messages={messages} loading={loading} messagesEndRef={messagesEndRef} handleFeedback={handleFeedback} feedbackGiven={feedbackGiven} handleCopyMessage={handleCopyMessage} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} />
+        <MessageArea messages={messages} loading={loading} messagesEndRef={messagesEndRef} handleFeedback={handleFeedback} feedbackGiven={feedbackGiven} handleCopyMessage={handleCopyMessage} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} />
 
         {/* Inpuzxsxt Area */}
         <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} />
