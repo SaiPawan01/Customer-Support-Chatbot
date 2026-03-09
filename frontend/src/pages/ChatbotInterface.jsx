@@ -25,9 +25,7 @@ export default function ChatbotInterface() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
-  
   const [activeConversation, setActiveConversation] = useState(null);
-  const [feedbackGiven, setFeedbackGiven] = useState({});
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -46,8 +44,6 @@ export default function ChatbotInterface() {
       console.log(`error fetching message ${error}`);
     }
   }
-
-
 
 
   const handleSendMessage = async (e) => {
@@ -73,28 +69,19 @@ export default function ChatbotInterface() {
           id: response.data.data.id,
           role:'assistant',
           content: response.data.data.message,
-          created_at: response.data.data.created_at
+          created_at: response.data.data.created_at,
+          source: response.data.data.source,
         }
         setMessages(prev => [...prev, botReply])
         setLoading(false);
+      }
+      else{
+        console.log(response)
       }
     }catch(error){
       console.log("error occured while geting bot reply"+ error)
     }
 
-  };
-
-
-  const handleFeedback = (messageId, isPositive) => {
-    setFeedbackGiven(prev => ({
-      ...prev,
-      [messageId]: isPositive ? 'positive' : 'negative'
-    }));
-    // TODO: Send feedback to backend
-  };
-
-  const handleCopyMessage = (text) => {
-    navigator.clipboard.writeText(text);
   };
 
   
@@ -123,18 +110,11 @@ export default function ChatbotInterface() {
         <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} />
 
         {/* Messages Area */}
-        <MessageArea messages={messages} loading={loading} messagesEndRef={messagesEndRef} handleFeedback={handleFeedback} feedbackGiven={feedbackGiven} handleCopyMessage={handleCopyMessage} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} />
+        <MessageArea messages={messages} loading={loading} messagesEndRef={messagesEndRef} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} />
 
         {/* Inpuzxsxt Area */}
-        <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} />
+        <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} activeConversation={activeConversation} />
       </div>
     </div>
   );
 }
-
-// Menu icon (add to imports if not available)
-const Menu = ({ className }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-  </svg>
-);

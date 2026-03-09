@@ -1,7 +1,7 @@
 import React from 'react'
 import {Send} from 'lucide-react'
 
-function BotInput({handleSendMessage, inputValue, setInputValue, loading }){
+function BotInput({handleSendMessage, inputValue, setInputValue, loading, activeConversation }){
 
     return <>
      <div className="bg-slate-800 border-t border-slate-700 px-6 py-4">
@@ -12,7 +12,8 @@ function BotInput({handleSendMessage, inputValue, setInputValue, loading }){
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask me anything... (IT policies, troubleshooting, procedures)"
+                  disabled={activeConversation === null ? true : false}
+                  placeholder={activeConversation === null ? "select a conversation" : "start asking questions"}
                   className="flex-1 bg-transparent text-white placeholder-slate-500 px-4 py-3 outline-none text-sm"
                 />
               </div>

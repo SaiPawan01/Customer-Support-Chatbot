@@ -74,6 +74,8 @@ INSTALLED_APPS = [
     'accounts',
     'chatbot',
     'documents',
+
+    'django.contrib.postgres'
 ]
 
 MIDDLEWARE = [

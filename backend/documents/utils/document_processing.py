@@ -48,14 +48,11 @@ def chunk_text(docs,instance, chunk_size=600, overlap=200):
             'doc_version': instance.version,
             'author': chunk.metadata.get("author", "unknown"),
             'source': chunk.metadata.get("source", "unknown"),
-             'page':chunk.metadata.get("page", "unknown"),
+            'page':chunk.metadata.get("page", "unknown"),
             'chunk_content': chunk.page_content,
             'chunk_content_length': len(chunk.page_content),
         }
 
-    print(f"Created {len(chunks)} chunks for document ID {instance.id}")
-    print(f"Sample chunk metadata: {chunks[0].metadata if chunks else 'No chunks created'}")
-    print(f"Sample chunk content length: {len(chunks[0].page_content) if chunks else 'No chunks created'} characters")
     return chunks
 
 

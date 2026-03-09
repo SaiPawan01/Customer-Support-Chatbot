@@ -6,14 +6,14 @@ from documents.utils.document_processing import get_pinecone_instance
 from dotenv import load_dotenv
 import os
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain.messages import SystemMessage
+from langchain.messages import HumanMessage
 
 load_dotenv()
 
 def get_gemini_model():
     return ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
-        google_api_key=os.getenv("GEMINI_API_KEY"),
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
         temperature=1.0,
         max_tokens=None,
         timeout=None,
@@ -30,12 +30,13 @@ def get_embeddings_model():
 
 
 def get_relevant_chunks(query):
-
-    embeddings_model = get_embeddings_model()
-    pc = get_pinecone_instance()
-
-    index = pc.Index('documents')
-    vector = embeddings_model.embed_query(query)
+    try:
+        embeddings_model = get_embeddings_model()
+        pc = get_pinecone_instance()
+        index = pc.Index('documents')
+        vector = embeddings_model.embed_query(query)
+    except:
+        print("pinecone failed")
     results = index.query(
         vector=vector,
         top_k=3,
@@ -44,17 +45,19 @@ def get_relevant_chunks(query):
         namespace=""
     )
     context = []
-    for match in results.matches:
-        context.append({
-            'content': match.metadata['chunk_content'],
-            'metadata': match.metadata
-        })
+    if results.matches:
+        for match in results.matches:
+            context.append({
+                'content' : match.metadata.get("chunk_content", ""),
+                'metadata': match.metadata
+            })
     return context
 
 def get_bot_reply(user_query, context, history):
     model = get_gemini_model()
     data = [result['content'] for result in context]
-    sources = set(result['metadata'].get('source') for result in context if result['metadata'].get('source'))
+    sources = list(set(result['metadata'].get('source') for result in context if result['metadata'].get('source')))
+    sources = [os.path.split(path)[1] for path in sources]
 
     prompt = f"""# Role and Identity
     
@@ -106,8 +109,12 @@ def get_bot_reply(user_query, context, history):
                 User Query: {user_query}
                 Think step by step. Triple check to confirm that all instructions are followed before you output a response.
                 """
+    
+    try:
+        response = model.invoke([HumanMessage(content=prompt)])
+    except Exception as e:
+        print(e)
 
-    response = model.invoke(input=prompt)
 
     return response.content, sources
 

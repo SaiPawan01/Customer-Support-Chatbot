@@ -8,9 +8,6 @@ import remarkGfm from "remark-gfm";
 function MessageArea({ messages,
     loading,
     messagesEndRef,
-    handleFeedback,
-    feedbackGiven,
-    handleCopyMessage,
     getConfidenceColor,
     newConversation,
     setNewConversation,
@@ -103,77 +100,37 @@ function MessageArea({ messages,
                             </ReactMarkdown>
                         </div>
 
-                        {/* File Attachment (if any) */}
-                        {message.file && (
-                            <div className="bg-slate-600/50 rounded px-3 py-2 flex items-center gap-2 text-xs">
-                                <Paperclip className="w-4 h-4" />
-                                {message.file.name} ({message.file.size}KB)
-                            </div>
-                        )}
 
                         {/* Confidence Score & Sources (Bot only) */}
                         {message.role === 'assistant' &&
-                            message.confidence !== null &&
-                            message.confidence !== undefined && (
+                            // message.confidence !== null &&
+                            // message.confidence !== undefined && 
+                            (
                                 <div className="space-y-2 pt-2 border-t border-slate-600">
-                                    <div className="flex items-center gap-2">
+                                    {/* <div className="flex items-center gap-2">
                                         <span className="text-xs text-slate-400">Confidence:</span>
                                         <span className={`text-xs font-semibold ${getConfidenceColor(message.confidence)}`}>
                                             {(message.confidence * 100).toFixed(0)}%
                                         </span>
-                                    </div>
+                                    </div> */}
 
                                     {/* Sources */}
-                                    {message.sources && message.sources.length > 0 && (
+                                    {(message.source && message.source.length) > 0 && (
                                         <div className="space-y-1">
-                                            <p className="text-xs text-slate-400">Sources:</p>
-                                            {message.sources.map((source, srcIdx) => (
-                                                <a
+                                            <p className="text-xs text-slate-400">Source:</p>
+                                            {message.source.map((item, srcIdx) => (
+                                                <h6
                                                     key={srcIdx}
-                                                    href={source.url}
                                                     className="text-xs text-blue-300 hover:text-blue-200 flex items-center gap-1 transition"
                                                 >
-                                                    <FileText className="w-3 h-3" />
-                                                    {source.title}
-                                                </a>
+                                                    {item}
+                                                </h6>
                                             ))}
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                        {/* Feedback & Actions (Bot only) */}
-                        {message.sender === 'assistant' && idx > 0 && (
-                            <div className="flex items-center gap-2 pt-2 border-t border-slate-600">
-                                <button
-                                    onClick={() => handleFeedback(message.id, true)}
-                                    className={`p-1.5 rounded transition ${feedbackGiven?.[message.id] === 'positive'
-                                        ? 'bg-green-500/30 text-green-400'
-                                        : 'text-slate-400 hover:text-slate-200'
-                                        }`}
-                                    title="This was helpful"
-                                >
-                                    <ThumbsUp className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => handleFeedback(message.id, false)}
-                                    className={`p-1.5 rounded transition ${feedbackGiven?.[message.id] === 'negative'
-                                        ? 'bg-red-500/30 text-red-400'
-                                        : 'text-slate-400 hover:text-slate-200'
-                                        }`}
-                                    title="This wasn't helpful"
-                                >
-                                    <ThumbsDown className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => handleCopyMessage(message.text)}
-                                    className="p-1.5 rounded text-slate-400 hover:text-slate-200 transition"
-                                    title="Copy message"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                </button>
-                            </div>
-                        )}
 
                         {/* Timestamp */}
                         <p className="text-xs text-slate-400 pt-1">

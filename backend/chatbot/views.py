@@ -119,9 +119,18 @@ class DeleteConversationView(APIView):
 
 
 
-
 class CreateMessageView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def error_response(self, message, error=None, code=status.HTTP_500_INTERNAL_SERVER_ERROR):
+        return Response(
+            {
+                "success": False,
+                "message": message,
+                "error": str(error) if error else None
+            },
+            status=code
+        )
 
     def post(self, request):
         try:
@@ -129,32 +138,38 @@ class CreateMessageView(APIView):
             conversation_id = request.data.get("conversation_id")
 
             if not user_query:
-                return Response(
-                    {"error": "Message field is required."},
-                    status=status.HTTP_400_BAD_REQUEST
+                return self.error_response(
+                    "Message field is required.",
+                    code=status.HTTP_400_BAD_REQUEST
                 )
 
             if not conversation_id:
-                return Response(
-                    {"error": "Conversation ID is required."},
-                    status=status.HTTP_400_BAD_REQUEST
+                return self.error_response(
+                    "Conversation ID is required.",
+                    code=status.HTTP_400_BAD_REQUEST
                 )
 
-            conversation = get_object_or_404(
-                Conversation,
-                id=conversation_id
-            )
+            conversation = get_object_or_404(Conversation, id=conversation_id)
 
             with transaction.atomic():
+
+                # Save user message
                 Message.objects.create(
                     conversation=conversation,
                     sender="user",
                     message=user_query
                 )
 
+                # Retrieve context
+                try:
+                    context = get_relevant_chunks(user_query)
+                except Exception as e:
+                    return self.error_response(
+                        "Unable to retrieve relevant chunks.",
+                        error=e
+                    )
 
-                context = get_relevant_chunks(user_query)
-
+                # Fetch conversation history
                 messages = (
                     Message.objects
                     .filter(
@@ -164,7 +179,6 @@ class CreateMessageView(APIView):
                     .order_by("-created_at")[:20]
                 )
 
-                # Reverse to chronological order
                 messages = reversed(messages)
 
                 history = [
@@ -175,49 +189,52 @@ class CreateMessageView(APIView):
                     for msg in messages
                 ]
 
-                print(history)
+                
+                
+                # Get LLM response
+                try:
+                    bot_reply, source = get_bot_reply(
+                        user_query,
+                        context,
+                        history
+                    )
+                except Exception as e:
+                    return self.error_response(
+                        "Unable to generate LLM response.",
+                        error=e
+                    )
 
-
-                bot_reply, sources = get_bot_reply(
-                    user_query,
-                    context,
-                    history,
-                )
-
-
+                # Save assistant reply
                 msg = Message.objects.create(
                     conversation=conversation,
                     sender="assistant",
                     message=bot_reply,
+                    source=source
                 )
-                
 
             return Response(
                 {
                     "success": True,
                     "data": {
-                        "id" : msg.id,
+                        "id": msg.id,
                         "message": msg.message,
-                        "created_at" : msg.created_at,
+                        "created_at": msg.created_at,
+                        "source": source
                     }
-
                 },
                 status=status.HTTP_200_OK
             )
 
-        except DatabaseError:
-            return Response(
-                {"error": "Database error occurred."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        except DatabaseError as e:
+            return self.error_response(
+                "Database error occurred.",
+                error=e
             )
 
         except Exception as e:
-            return Response(
-                {
-                    "error": "Unexpected error occurred.",
-                    "details": str(e)
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            return self.error_response(
+                "Unexpected error occurred.",
+                error=e
             )
 
 
