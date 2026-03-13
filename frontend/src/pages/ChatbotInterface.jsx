@@ -68,7 +68,7 @@ export default function ChatbotInterface() {
       if(response.data && response.data.data){
         const botReply = {
           id: response.data.data.id,
-          role:'assistant',
+          role:'assistant', 
           content: response.data.data.message,
           created_at: response.data.data.created_at,
           source: response.data.data.source,
@@ -86,7 +86,6 @@ export default function ChatbotInterface() {
 
   };
 
-  
 
   const getConfidenceColor = (confidence) => {
     if (confidence >= 0.7) return 'text-green-400';
@@ -112,7 +111,7 @@ export default function ChatbotInterface() {
         <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} />
 
         {/* Messages Area */}
-        <MessageArea messages={messages} loading={loading} messagesEndRef={messagesEndRef} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} />
+        <MessageArea messages={messages} setMessages={setMessages} loading={loading} messagesEndRef={messagesEndRef} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} />
 
         {/* Inpuzxsxt Area */}
         <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} activeConversation={activeConversation} />

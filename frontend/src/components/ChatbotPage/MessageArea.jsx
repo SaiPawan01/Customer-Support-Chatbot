@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 
 
 function MessageArea({ messages,
+    setMessages,
     loading,
     messagesEndRef,
     getConfidenceColor,
@@ -30,6 +31,7 @@ function MessageArea({ messages,
                 setConversations(prev => [response.data.data, ...prev])
                 setActiveConversation(response.data.data.id)
                 setNewConversation(false)
+                setMessages([])
             }
         }
         catch (error) {
@@ -86,7 +88,7 @@ function MessageArea({ messages,
                 >
                     <div
                         className={`max-w-xs lg:max-w-2xl ${message.role === 'user'
-                            ? 'bg-blue-600 text-white rounded-3xl rounded-tr-none'
+                            ? 'bg-slate-600 text-white rounded-3xl rounded-tr-none'
                             : 'bg-slate-700 text-slate-100 rounded-3xl rounded-tl-none'
                             } px-6 py-4 space-y-3`}
                     >

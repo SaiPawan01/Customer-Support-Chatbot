@@ -152,13 +152,7 @@ class CreateMessageView(APIView):
             conversation = get_object_or_404(Conversation, id=conversation_id)
 
             with transaction.atomic():
-
-                # Save user message
-                Message.objects.create(
-                    conversation=conversation,
-                    sender="user",
-                    message=user_query
-                )
+                
 
                 # Retrieve context
                 try:
@@ -189,11 +183,15 @@ class CreateMessageView(APIView):
                     for msg in messages
                 ]
 
-                
+                Message.objects.create(
+                    conversation=conversation,
+                    sender="user",
+                    message=user_query
+                )
                 
                 # Get LLM response
                 try:
-                    bot_reply, source = get_bot_reply(
+                    response_obj, source = get_bot_reply(
                         user_query,
                         context,
                         history
@@ -204,16 +202,20 @@ class CreateMessageView(APIView):
                         error=e
                     )
                 
-                confidence_score = sum([float(match['score']) for match in context])/len(context)
+                if context:
+                    confidence_score = sum(float(match['score']) for match in context) / len(context)
+                else:
+                    confidence_score = 0.0
+                
                 # Save assistant reply
                 msg = Message.objects.create(
                     conversation=conversation,
                     sender="assistant",
-                    message=bot_reply,
+                    message=response_obj.response_content,
                     source=source,
                     confidence_score= confidence_score
                 )
-
+            
                 
 
 
@@ -225,7 +227,8 @@ class CreateMessageView(APIView):
                         "message": msg.message,
                         "created_at": msg.created_at,
                         "source": source,
-                        "confidence": confidence_score
+                        "confidence": confidence_score,
+                        "escalation_status": response_obj.escalation
                     }
                 },
                 status=status.HTTP_200_OK

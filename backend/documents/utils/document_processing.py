@@ -32,7 +32,7 @@ def load_pdf(instance):
 
 
 
-def chunk_text(docs,instance, chunk_size=600, overlap=200):
+def chunk_text(docs,instance, chunk_size=1000, overlap=200):
     """Chunk text into smaller pieces with overlap."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -69,7 +69,7 @@ def generate_embeddings(chunks):
         texts = [chunk.page_content for chunk in chunks]
         metadata = [chunk.metadata for chunk in chunks]
 
-        vectors = embeddings_model.embed_documents(texts)  # 🔥 single API call
+        vectors = embeddings_model.embed_documents(texts)
 
         embeddings = [
             {"values": vector, "metadata": metadata,"id": str(uuid.uuid4()),}
