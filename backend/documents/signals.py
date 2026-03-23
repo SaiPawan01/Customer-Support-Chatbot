@@ -26,4 +26,4 @@ def delete_document_embeddings(sender, instance, **kwargs):
         index = pc.Index('documents')
         index.delete(filter={"doc_id":{"$eq" : instance.id}})
     except Exception as e:
-        print(f"Error deleting embeddings: {e}")
+        pass

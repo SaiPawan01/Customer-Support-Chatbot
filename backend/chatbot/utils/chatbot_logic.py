@@ -40,7 +40,7 @@ def get_relevant_chunks(query):
         index = pc.Index('documents')
         vector = embeddings_model.embed_query(query)
     except:
-        print("pinecone failed")
+        pass
     results = index.query(
         vector=vector,
         top_k=3,
@@ -51,7 +51,6 @@ def get_relevant_chunks(query):
     if results.matches:
         for match in results.matches:
             if match.score >= float(0.5):
-                print(match)
                 context.append({
                     'content' : match.metadata.get("chunk_content", ""),
                     'metadata': match.metadata,
@@ -145,10 +144,9 @@ def get_bot_reply(user_query, context, history):
             'user_query': user_query,
             'history': formatted_history
         })
-        print(response)
         # print(parsed_response)
     except Exception as e:
-        print(e)
+        pass
 
 
     return response, sources

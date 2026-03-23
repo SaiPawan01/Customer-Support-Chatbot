@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
+import logging
 
 import dj_database_url
 
@@ -186,3 +187,18 @@ STATIC_URL = 'static/'
 MEDIA_ROOT = BASE_DIR/'media'
 
 MEDIA_URL = "/media/"
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.db import DatabaseError, transaction
 from django.core.exceptions import ObjectDoesNotExist
+import logging
 
 from .models import Conversation, Message
 from .serializers import ConversationSerializer
@@ -14,10 +15,13 @@ from .utils.chatbot_logic import get_relevant_chunks, get_bot_reply
 class CreateConversationView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
+        logger = logging.getLogger(__name__)
+        logger.info(f"Creating conversation for user {request.user.username}")
         try:
             serializer = ConversationSerializer(data=request.data)
 
             if not serializer.is_valid():
+                logger.warning(f"Invalid input data for conversation creation by user {request.user.username}: {serializer.errors}")
                 return Response(
                     {
                         "success": False,
@@ -28,6 +32,7 @@ class CreateConversationView(APIView):
                 )
 
             serializer.save(user=request.user)
+            logger.info(f"Conversation created successfully for user {request.user.username}")
 
             return Response(
                 {
@@ -38,7 +43,8 @@ class CreateConversationView(APIView):
                 status=status.HTTP_201_CREATED,
             )
 
-        except DatabaseError:
+        except DatabaseError as e:
+            logger.error(f"Database error occurred while creating conversation for user {request.user.username}: {str(e)}")
             return Response(
                 {
                     "success": False,

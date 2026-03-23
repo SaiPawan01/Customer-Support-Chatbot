@@ -17,7 +17,6 @@ def load_pdf(instance):
 
     # Check if file exists
     if not os.path.exists(file_path):
-        print("File not found:", file_path)
         return None
 
     try:
@@ -26,7 +25,6 @@ def load_pdf(instance):
         return docs
 
     except Exception as e:
-        print("Error loading PDF:", str(e))
         return None
 
 
@@ -79,7 +77,6 @@ def generate_embeddings(chunks):
         return embeddings
 
     except Exception as e:
-        print(f"Error generating embeddings: {str(e)}")
         return None
 
 
@@ -111,4 +108,4 @@ def store_embeddings(vectors):
     # Upsert in batch
     index.upsert(vectors=vectors)
 
-    print(f"Successfully stored {len(vectors)} embeddings.")
+    pass
