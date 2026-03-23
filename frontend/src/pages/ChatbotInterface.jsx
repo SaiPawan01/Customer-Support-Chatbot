@@ -81,6 +81,7 @@ export default function ChatbotInterface() {
         console.log(response)
       }
     }catch(error){
+      setLoading(false);
       console.log("error occured while geting bot reply"+ error)
     }
 

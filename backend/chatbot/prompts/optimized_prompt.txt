@@ -1,0 +1,10 @@
+CONTEXT:
+{data}
+
+QUESTION:
+{user_query}
+
+NOTE:
+- Chat history is only for continuity, not factual reference.
+- Use ONLY CONTEXT for answers.
+- Ensure all instructions are followed before returning the final JSON.

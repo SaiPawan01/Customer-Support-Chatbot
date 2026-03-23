@@ -1,0 +1,10 @@
+CONTEXT:
+{data}
+
+User Question:
+{user_query}
+
+Chat history is provided only for conversational continuity.
+Do not treat chat history as a source of factual knowledge.
+Only the CONTEXT section contains reliable information.
+Verify internally that all instructions are followed before returning the final JSON response.
