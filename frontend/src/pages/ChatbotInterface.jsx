@@ -27,6 +27,7 @@ export default function ChatbotInterface() {
   const [showSettings, setShowSettings] = useState(false);
   const [activeConversation, setActiveConversation] = useState(null);
   const messagesEndRef = useRef(null);
+  const [escalationStatus, setEscalationStatus] = useState({escalation: false, messageId: null});
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,7 +59,7 @@ export default function ChatbotInterface() {
       conversation_id: activeConversation,
       created_at: new Date().toLocaleString()
     } 
-
+    setEscalationStatus({escalation: false, messageId: null});
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setLoading(true);
@@ -73,6 +74,9 @@ export default function ChatbotInterface() {
           created_at: response.data.data.created_at,
           source: response.data.data.source,
           confidence: response.data.data.confidence,
+        }
+        if(response.data.data.escalation_status == true){
+          setEscalationStatus({escalation: true, messageId: botReply.id})
         }
         setMessages(prev => [...prev, botReply])
         setLoading(false);
@@ -104,15 +108,15 @@ export default function ChatbotInterface() {
   return (
     <div className="flex h-screen bg-slate-900">
       {/* Sidebar */}
-      <SidebarWindow sidebarOpen={sidebarOpen} fetchMessages={fetchMessages} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setNewConversation={setNewConversation} conversations={conversations} setConversations={setConversations} />
+      <SidebarWindow sidebarOpen={sidebarOpen} fetchMessages={fetchMessages} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setNewConversation={setNewConversation} conversations={conversations} setConversations={setConversations} setEscalationStatus={setEscalationStatus} />
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} />
+        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} escalationStatus={escalationStatus} />
 
         {/* Messages Area */}
-        <MessageArea messages={messages} setMessages={setMessages} loading={loading} messagesEndRef={messagesEndRef} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} />
+        <MessageArea messages={messages} setMessages={setMessages} loading={loading} messagesEndRef={messagesEndRef} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} escalationStatus={escalationStatus} />
 
         {/* Inpuzxsxt Area */}
         <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} activeConversation={activeConversation} />

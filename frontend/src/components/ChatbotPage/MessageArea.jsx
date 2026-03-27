@@ -14,7 +14,9 @@ function MessageArea({ messages,
     setNewConversation,
     setConversations,
     setActiveConversation,
-    activeConversation }) {
+    activeConversation,
+    escalationStatus,
+}) {
 
 
     const handleSubmit = async (e) => {
@@ -102,6 +104,7 @@ function MessageArea({ messages,
                             </ReactMarkdown>
                         </div>
 
+                        { (escalationStatus.escalation == true && message.role == 'assistant' && escalationStatus.messageId === message.id) && <p>Need help from a human? Click the "Escalate Issue" button in the header to proceed.</p>}
 
                         {/* Confidence Score & Sources (Bot only) */}
                         {message.role === 'assistant' &&

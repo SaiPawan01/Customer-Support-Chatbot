@@ -11,6 +11,8 @@ from .models import Conversation, Message
 from .serializers import ConversationSerializer
 from .utils.chatbot_logic import get_relevant_chunks, get_bot_reply
 
+from .utils.email_service import send_email_to_agent
+
 # Create your views here.
 class CreateConversationView(APIView):
     permission_classes = [IsAuthenticated]
@@ -366,11 +368,12 @@ class FetchAllConversations(APIView):
 
             data = [
                 {
-                    "id": doc.id,
-                    "title": doc.title,
-                    "created_at": doc.created_at
+                    "id": conv.id,
+                    "title": conv.title,
+                    "created_at": conv.created_at,
+                    "status": conv.status,
                 }
-                for doc in conversations
+                for conv in conversations
             ]
 
             return Response(
@@ -403,7 +406,98 @@ class FetchAllConversations(APIView):
 
 
 
+class EscalateToAgentView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        try:
+            conversation_id = request.data.get("conversation_id")
+            user_id = request.user.id
+
+            if not conversation_id:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Conversation ID is required."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+
+            conversation = get_object_or_404(
+                Conversation,
+                id=conversation_id,
+                user=request.user
+            )
+
+
+            messages = (
+                Message.objects
+                .filter(conversation=conversation)
+                .order_by("-created_at")[:20]
+            )
+
+
+            messages = reversed(messages)
+
+            conversation_history = [
+                {
+                    "role": msg.sender,
+                    "content": msg.message,
+                    "source": msg.source,
+                }
+                for msg in messages
+            ]
+
+            email_sent = send_email_to_agent(user_id, conversation_id, conversation.title, conversation_history, request.user.email, request.user.username)
+
+            if email_sent:
+                conversation.status = "pending"
+                conversation.save()
+
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Message escalated to agent successfully."
+                    },
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Failed to escalate message to agent."
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Message not found."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except DatabaseError:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Database error occurred while escalating message."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "message": "An unexpected error occurred.",
+                    "error": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 

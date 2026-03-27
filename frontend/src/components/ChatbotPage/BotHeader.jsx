@@ -2,9 +2,25 @@ import React, { useState } from 'react';
 import { Menu, Trash2} from 'lucide-react'
 
 import Modal from './Modal';
+import { escalateToAgent } from '../../api/bot.api.js';
 
-function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConversation, setActiveConversation, setConversations}){
+function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConversation, setActiveConversation, setConversations, escalationStatus}) {
     const [modalState, setModalState] = useState(false);
+
+    const handleEscalation = (conversationId) => {
+      try{
+        console.log(`Attempting to escalate conversation with ID: ${conversationId}`);
+        const response = escalateToAgent(conversationId);
+        console.log("Escalation response:", response);
+        if(response.success == true){
+          alert("Issue escalated to human agent successfully.")
+          
+        }
+      }
+      catch(error){
+        console.log(`Something went wrong while escalating the issue: ${error}`)
+      }
+    }
     return <>
     <div className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -19,12 +35,20 @@ function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConvers
               <p className="text-sm text-slate-400">Always ready to help</p>
             </div>
           </div>
-          <button
+          <div className='flex items-center justify-center gap-3'>
+            {escalationStatus.escalation && (
+              <button onClick={() => handleEscalation(activeConversation)} className="ml-4 w-30 h-10 bg-white text-red-600 px-3 py-1 rounded-md text-sm font-medium hover:bg-red-50">
+                Escalate Issue
+              </button>
+            )}
+            <button
             onClick={() => setShowSettings(!showSettings)}
             className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700 transition"
           >
             {activeConversation != null && <Trash2 onClick={() => setModalState(prev => !prev)} className="w-6 h-6" /> }
           </button>
+          </div>
+          
         </div>
 
 

@@ -10,8 +10,6 @@ from langchain.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from pydantic import BaseModel, Field
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_community.chat_message_histories import ChatMessageHistory
 
 
 load_dotenv()

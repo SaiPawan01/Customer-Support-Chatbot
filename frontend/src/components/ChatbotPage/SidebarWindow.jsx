@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { logoutUser } from '../../api/auth.api.js'
 import { fetchALLConversations } from "../../api/sidebar.api.js";
 
-function SidebarWindow({sidebarOpen, fetchMessages, activeConversation, setActiveConversation, setNewConversation, conversations, setConversations}) {
+function SidebarWindow({sidebarOpen, fetchMessages, activeConversation, setActiveConversation, setNewConversation, conversations, setConversations, setEscalationStatus}) {
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -83,6 +83,7 @@ function SidebarWindow({sidebarOpen, fetchMessages, activeConversation, setActiv
                             setActiveConversation(conv.id),
                             setNewConversation(false);
                             fetchMessages(conv.id);
+                            setEscalationStatus({escalation: false, messageId: null});
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition ${activeConversation === conv.id
                                 ? 'bg-blue-600 text-white'

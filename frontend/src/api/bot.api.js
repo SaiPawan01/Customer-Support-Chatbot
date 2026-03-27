@@ -41,3 +41,15 @@ export const deleteConversation = (id) => {
         })
     }
 }
+
+
+export const escalateToAgent = (conversationId) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        return api.post(`api/chatbot/send/email`,{conversation_id:conversationId}, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+    }
+}
