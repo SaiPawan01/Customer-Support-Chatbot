@@ -15,5 +15,4 @@ export default function Oauth() {
               GitHub
             </button>
         </div >
-          
 }
