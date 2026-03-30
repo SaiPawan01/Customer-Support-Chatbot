@@ -153,7 +153,7 @@ function MessageArea({ messages,
                 </div>
             ))}
 
-            {messages.conversationStatus === 'pending' && (
+            {(messages.conversationStatus === 'pending' && activeConversation) && (
                 <div className="bg-amber-400/10 border border-amber-400/30 text-amber-300 px-4 py-3 rounded-md font-medium flex items-center justify-center gap-2">
 
                     {/* <span className="text-lg">⚠️</span> */}

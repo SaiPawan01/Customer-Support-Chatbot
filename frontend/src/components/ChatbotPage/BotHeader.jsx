@@ -3,8 +3,9 @@ import { Menu, Trash2} from 'lucide-react'
 
 import Modal from './Modal';
 import { escalateToAgent } from '../../api/bot.api.js';
+import { deleteConversation } from '../../api/bot.api.js';
 
-function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConversation, setActiveConversation, setConversations, escalationStatus, setEscalationStatus}) {
+function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConversation, setActiveConversation, setConversations, escalationStatus, setEscalationStatus, setMessages}) {
     const [modalState, setModalState] = useState(false);
     const [convEscalationModalStatus, setConvEscalationModalStatus] = useState(false);
 
@@ -12,10 +13,15 @@ function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConvers
       setConvEscalationModalStatus(prev => !prev)
     }
 
-    const handleEscalationModalConfirm = () =>{
+    const handleEscalationModalConfirm = () => {
       handleEscalation(activeConversation);
       setConvEscalationModalStatus(prev => !prev)
       setEscalationStatus({ escalation: false, messageId: null });
+      setMessages(prev => {
+        return {
+          ...prev, conversationStatus: 'pending'
+        }
+      })
     }
 
     const handleEscalation = (conversationId) => {

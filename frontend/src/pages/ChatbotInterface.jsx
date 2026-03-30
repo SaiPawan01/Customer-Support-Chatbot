@@ -122,7 +122,7 @@ export default function ChatbotInterface() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} escalationStatus={escalationStatus} setEscalationStatus={setEscalationStatus} />
+        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} escalationStatus={escalationStatus} setEscalationStatus={setEscalationStatus} setMessages={setMessages} />
 
         {/* Messages Area */}
         <MessageArea messages={messages} setMessages={setMessages} loading={loading} messagesEndRef={messagesEndRef} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} escalationStatus={escalationStatus} />

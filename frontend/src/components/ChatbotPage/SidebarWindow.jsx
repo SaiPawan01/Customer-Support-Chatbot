@@ -54,7 +54,10 @@ function SidebarWindow({sidebarOpen, fetchMessages, activeConversation, setActiv
 
             {/* New Chat Button */}
             <button
-                onClick={()=>setNewConversation(true)}
+                onClick={()=> {
+                    setNewConversation(true)
+                    setActiveConversation(null);
+                }}
                 className="m-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-4 flex items-center justify-center gap-2 transition"
             >
                 <Plus className="w-5 h-5" />
