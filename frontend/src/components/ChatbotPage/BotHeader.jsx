@@ -4,8 +4,19 @@ import { Menu, Trash2} from 'lucide-react'
 import Modal from './Modal';
 import { escalateToAgent } from '../../api/bot.api.js';
 
-function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConversation, setActiveConversation, setConversations, escalationStatus}) {
+function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConversation, setActiveConversation, setConversations, escalationStatus, setEscalationStatus}) {
     const [modalState, setModalState] = useState(false);
+    const [convEscalationModalStatus, setConvEscalationModalStatus] = useState(false);
+
+    const handleEscalationModalClose = () => {
+      setConvEscalationModalStatus(prev => !prev)
+    }
+
+    const handleEscalationModalConfirm = () =>{
+      handleEscalation(activeConversation);
+      setConvEscalationModalStatus(prev => !prev)
+      setEscalationStatus({ escalation: false, messageId: null });
+    }
 
     const handleEscalation = (conversationId) => {
       try{
@@ -20,6 +31,24 @@ function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConvers
       catch(error){
         console.log(`Something went wrong while escalating the issue: ${error}`)
       }
+    }
+
+    const handleDeleteModalClose = () => {
+        setModalState(prev => !prev)
+    }
+    const handleDeleteModalConfirm = async () => {
+        try{
+            await deleteConversation(activeConversation);
+            setModalState(prev => !prev)
+            setConversations(prevConversations =>
+            prevConversations.filter(
+                (conversation) => conversation.id !== activeConversation
+            ));
+            setActiveConversation(null);
+        }
+        catch(error){ 
+            console.log(`something went wrong while deleting the conversation ${error}`)
+        }
     }
     return <>
     <div className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
@@ -37,7 +66,7 @@ function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConvers
           </div>
           <div className='flex items-center justify-center gap-3'>
             {escalationStatus.escalation && (
-              <button onClick={() => handleEscalation(activeConversation)} className="ml-4 w-30 h-10 bg-white text-red-600 px-3 py-1 rounded-md text-sm font-medium hover:bg-red-50">
+              <button onClick={() => setConvEscalationModalStatus(prev => !prev)} className="ml-4 w-30 h-10 bg-white text-red-600 px-3 py-1 rounded-md text-sm font-medium hover:bg-red-50">
                 Escalate Issue
               </button>
             )}
@@ -52,8 +81,8 @@ function BotHeader({setShowSettings, setSidebarOpen, showSettings, activeConvers
         </div>
 
 
-         <Modal isOpen={modalState} activeConversation={activeConversation} setModalState={setModalState} setConversations={setConversations} setActiveConversation={setActiveConversation} />
-        
+         <Modal btnDisplayMessage="Delete" displayMessage="Are you sure you want to delete this conversation?" isOpen={modalState} setModalState={setModalState} setConversations={setConversations} handleModalClose={handleDeleteModalClose} handleModalConfirm={handleDeleteModalConfirm} />
+         <Modal btnDisplayMessage="Escalate" displayMessage="Are you sure you want to escalate this issue?" isOpen={convEscalationModalStatus} setModalState={setConvEscalationModalStatus} handleModalClose={handleEscalationModalClose} handleModalConfirm={handleEscalationModalConfirm} />
     </>
 }
 

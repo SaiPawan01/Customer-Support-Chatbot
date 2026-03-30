@@ -1,12 +1,12 @@
 import React from 'react'
 import {Send} from 'lucide-react'
 
-function BotInput({handleSendMessage, inputValue, setInputValue, loading, activeConversation }){
+function BotInput({handleSendMessage, inputValue, setInputValue, loading, activeConversation, conversationStatus }){
 
     return <>
      <div className="bg-slate-800 border-t border-slate-700 px-6 py-4">
           <form onSubmit={handleSendMessage} className="space-y-3">
-            <div className="flex gap-3 items-end">
+            { (activeConversation && conversationStatus !== 'pending') && (<div className="flex gap-3 items-end">
               <div className="relative flex-1 flex items-center bg-slate-700 border border-slate-600 rounded-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
                 <input
                   type="text"
@@ -26,11 +26,11 @@ function BotInput({handleSendMessage, inputValue, setInputValue, loading, active
               >
                 <Send className="w-5 h-5" />
               </button>
-            </div>
+            </div>)}
 
             {/* Info Text */}
             <p className="text-xs text-slate-500 text-center">
-              SupportBot AI can help but for sensitive issues, contact our developers.
+              SupportBot AI can help but for sensitive issues, contact our support team.
             </p>
           </form>
         </div>

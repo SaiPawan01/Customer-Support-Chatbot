@@ -2,7 +2,7 @@ from django.core.cache import cache
 
 def store_otp(email, otp):
     cache_key = f"otp:{email}"
-    cache.set(cache_key, otp, timeout=300) 
+    cache.set(cache_key, otp, timeout=300)
 
 
 def verify_otp(email, user_otp):

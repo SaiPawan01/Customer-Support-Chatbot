@@ -82,7 +82,7 @@ function SidebarWindow({sidebarOpen, fetchMessages, activeConversation, setActiv
                         onClick={() =>{ 
                             setActiveConversation(conv.id),
                             setNewConversation(false);
-                            fetchMessages(conv.id);
+                            fetchMessages(conv.id, conv.status);
                             setEscalationStatus({escalation: false, messageId: null});
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg mb-2 transition ${activeConversation === conv.id

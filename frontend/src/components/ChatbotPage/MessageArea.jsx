@@ -33,7 +33,10 @@ function MessageArea({ messages,
                 setConversations(prev => [response.data.data, ...prev])
                 setActiveConversation(response.data.data.id)
                 setNewConversation(false)
-                setMessages([])
+                setMessages({
+                    messagesData: [],
+                    conversationStatus: 'active',
+                })
             }
         }
         catch (error) {
@@ -41,20 +44,20 @@ function MessageArea({ messages,
         }
     }
     if (activeConversation == null && newConversation == false) {
-    return (
-        <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-4">
-                <h2 className="text-xl font-semibold text-slate-300">
-                    No Conversation Selected
-                </h2>
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <h2 className="text-xl font-semibold text-slate-300">
+                        No Conversation Selected
+                    </h2>
 
-                <p className="text-slate-400 text-sm">
-                    Select a conversation from the sidebar or start a new one.
-                </p>
+                    <p className="text-slate-400 text-sm">
+                        Select a conversation from the sidebar or start a new one.
+                    </p>
+                </div>
             </div>
-        </div>
-    );
-}
+        );
+    }
 
     return <>
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
@@ -83,7 +86,7 @@ function MessageArea({ messages,
                         </button>
                     </form>
                 </div>
-            </div>) : (messages || []).map((message, idx) => (
+            </div>) : (messages.messagesData || []).map((message, idx) => (
                 <div
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -104,12 +107,12 @@ function MessageArea({ messages,
                             </ReactMarkdown>
                         </div>
 
-                        { (escalationStatus.escalation == true && message.role == 'assistant' && escalationStatus.messageId === message.id) && <p>Need help from a human? Click the "Escalate Issue" button in the header to proceed.</p>}
+                        {(escalationStatus.escalation == true && message.role == 'assistant' && escalationStatus.messageId === message.id) && <p>Need help from a human? Click the "Escalate Issue" button in the header to proceed.</p>}
 
                         {/* Confidence Score & Sources (Bot only) */}
                         {message.role === 'assistant' &&
                             message.confidence !== null &&
-                            message.confidence !== undefined && 
+                            message.confidence !== undefined &&
                             (
                                 <div className="space-y-2 pt-2 border-t border-slate-600">
                                     <div className="flex items-center gap-2">
@@ -149,6 +152,22 @@ function MessageArea({ messages,
                     </div>
                 </div>
             ))}
+
+            {messages.conversationStatus === 'pending' && (
+                <div className="bg-amber-400/10 border border-amber-400/30 text-amber-300 px-4 py-3 rounded-md font-medium flex items-center justify-center gap-2">
+
+                    {/* <span className="text-lg">⚠️</span> */}
+
+                    <p className="text-sm leading-relaxed">
+                        This conversation has been escalated. Please check your email—our support team will contact you shortly.
+
+                        <span className="text-amber-400 font-semibold ml-1">
+                            Conversation ID: {activeConversation}
+                        </span>
+                    </p>
+
+                </div>
+            )}
             {/* Loading Indicator */}
             {loading && (
                 <div className="flex justify-start">

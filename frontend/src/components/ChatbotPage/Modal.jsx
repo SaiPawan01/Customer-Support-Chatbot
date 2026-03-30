@@ -3,26 +3,9 @@ import { deleteConversation } from "../../api/bot.api";
 
 
 
-export default function Modal({ isOpen, activeConversation, setModalState, setConversations, setActiveConversation }) {
+export default function Modal({btnDisplayMessage, displayMessage, isOpen, handleModalClose, handleModalConfirm})  {
     
-    const handleClose = () => {
-        setModalState(prev => !prev)
-    }
-    const handleconform = async () => {
-        try{
-            await deleteConversation(activeConversation);
-            setModalState(prev => !prev)
-            setConversations(prevConversations =>
-            prevConversations.filter(
-                (conversation) => conversation.id !== activeConversation
-            ));
-            setActiveConversation(null);
-        }
-        catch(error){ 
-            console.log(`something went wrong while deleting the conversation ${error}`)
-        }
-        
-    }
+    
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -30,7 +13,7 @@ export default function Modal({ isOpen, activeConversation, setModalState, setCo
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={handleClose}
+                onClick={handleModalClose}
             />
 
             {/* Modal */}
@@ -40,7 +23,7 @@ export default function Modal({ isOpen, activeConversation, setModalState, setCo
 
                 {/* Close */}
                 <button
-                    onClick={handleClose}
+                    onClick={handleModalClose}
                     className="absolute top-3 right-3 text-slate-400 hover:text-slate-200 transition"
                 >
                     <X size={18} />
@@ -55,7 +38,7 @@ export default function Modal({ isOpen, activeConversation, setModalState, setCo
 
                 {/* Title */}
                 <h2 className="text-lg font-semibold text-slate-200 text-center mb-2">
-                    Delete Conversation?
+                    { displayMessage }
                 </h2>
 
                 {/* Description */}
@@ -66,7 +49,7 @@ export default function Modal({ isOpen, activeConversation, setModalState, setCo
                 {/* Actions */}
                 <div className="flex gap-3">
                     <button
-                        onClick={handleClose}
+                        onClick={handleModalClose}
                         className="flex-1 py-2 rounded-xl border border-slate-600
                        text-slate-300 text-sm
                        hover:bg-slate-700 transition"
@@ -75,13 +58,13 @@ export default function Modal({ isOpen, activeConversation, setModalState, setCo
                     </button>
 
                     <button
-                        onClick={handleconform}
+                        onClick={handleModalConfirm}
                         className="flex-1 py-2 rounded-xl bg-red-500
                        text-white text-sm
                        hover:bg-red-600 active:scale-95
                        transition"
                     >
-                        Delete
+                        { btnDisplayMessage }
                     </button>
                 </div>
             </div>

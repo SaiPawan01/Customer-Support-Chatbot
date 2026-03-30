@@ -7,18 +7,14 @@ import MessageArea from '../components/ChatbotPage/MessageArea';
 
 import { v4 as uuidv4 } from 'uuid';
 
-import {fetchALLMessages} from '../api/sidebar.api'
+import { fetchALLMessages } from '../api/sidebar.api'
 import { getBotReply } from '../api/bot.api';
 
 export default function ChatbotInterface() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      content: "Hello! I'm SupportBot AI. How can I help you today?",
-      role:'assistant',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState({
+    messagesData: [],
+    conversationStatus: 'active',
+  });
   const [conversations, setConversations] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [newConversation, setNewConversation] = useState(false);
@@ -27,19 +23,22 @@ export default function ChatbotInterface() {
   const [showSettings, setShowSettings] = useState(false);
   const [activeConversation, setActiveConversation] = useState(null);
   const messagesEndRef = useRef(null);
-  const [escalationStatus, setEscalationStatus] = useState({escalation: false, messageId: null});
+  const [escalationStatus, setEscalationStatus] = useState({ escalation: false, messageId: null });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
 
-  const fetchMessages = async (id) => {
+  const fetchMessages = async (id, status) => {
     try {
       const response = await fetchALLMessages(id);
       console.log(response)
       if (response.data && response.data.data) {
-        setMessages(response.data.data)
+        setMessages({
+          messagesData: response.data.data,
+          conversationStatus: status
+        });
       }
     }
     catch (error) {
@@ -58,35 +57,45 @@ export default function ChatbotInterface() {
       content: inputValue,
       conversation_id: activeConversation,
       created_at: new Date().toLocaleString()
-    } 
-    setEscalationStatus({escalation: false, messageId: null});
-    setMessages(prev => [...prev, userMessage]);
+    }
+    setEscalationStatus({ escalation: false, messageId: null });
+    setMessages(prev => {
+      return {
+        ...prev,
+        messagesData: [...prev.messagesData, userMessage]
+      };
+    });
     setInputValue('');
     setLoading(true);
-    try{
+    try {
       const response = await getBotReply(userMessage)
       console.log(response)
-      if(response.data && response.data.data){
+      if (response.data && response.data.data) {
         const botReply = {
           id: response.data.data.id,
-          role:'assistant', 
+          role: 'assistant',
           content: response.data.data.message,
           created_at: response.data.data.created_at,
           source: response.data.data.source,
           confidence: response.data.data.confidence,
         }
-        if(response.data.data.escalation_status == true){
-          setEscalationStatus({escalation: true, messageId: botReply.id})
+        if (response.data.data.escalation_status == true) {
+          setEscalationStatus({ escalation: true, messageId: botReply.id })
         }
-        setMessages(prev => [...prev, botReply])
+        setMessages(prev => {
+          return {
+            ...prev,
+            messagesData: [...prev.messagesData, botReply]
+          };
+        });
         setLoading(false);
       }
-      else{
+      else {
         console.log(response)
       }
-    }catch(error){
+    } catch (error) {
       setLoading(false);
-      console.log("error occured while geting bot reply"+ error)
+      console.log("error occured while geting bot reply" + error)
     }
 
   };
@@ -103,7 +112,7 @@ export default function ChatbotInterface() {
     scrollToBottom();
   }, [messages]);
 
-  
+
 
   return (
     <div className="flex h-screen bg-slate-900">
@@ -113,13 +122,13 @@ export default function ChatbotInterface() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} escalationStatus={escalationStatus} />
+        <BotHeader setShowSettings={setShowSettings} setSidebarOpen={setSidebarOpen} showSetting={showSettings} activeConversation={activeConversation} setActiveConversation={setActiveConversation} setConversations={setConversations} escalationStatus={escalationStatus} setEscalationStatus={setEscalationStatus} />
 
         {/* Messages Area */}
         <MessageArea messages={messages} setMessages={setMessages} loading={loading} messagesEndRef={messagesEndRef} getConfidenceColor={getConfidenceColor} newConversation={newConversation} setConversations={setConversations} setNewConversation={setNewConversation} setActiveConversation={setActiveConversation} activeConversation={activeConversation} escalationStatus={escalationStatus} />
 
         {/* Inpuzxsxt Area */}
-        <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} activeConversation={activeConversation} />
+        <BotInput handleSendMessage={handleSendMessage} inputValue={inputValue} setInputValue={setInputValue} loading={loading} activeConversation={activeConversation} conversationStatus={messages.conversationStatus} />
       </div>
     </div>
   );
