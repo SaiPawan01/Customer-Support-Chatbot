@@ -41,6 +41,7 @@ export function ChatbotContextProvider({ children }) {
     }
 
 
+    
     // Handle sending a message: create a user message object, update the messages state, clear the input, and fetch the bot's reply. If the bot's reply indicates escalation, update the escalation status.
     const handleSendMessage = async (e) => {
         e.preventDefault();
