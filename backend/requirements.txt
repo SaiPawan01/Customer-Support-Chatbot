@@ -24,6 +24,8 @@ langchain-core==1.2.13
 langchain-google-genai==4.2.1
 langgraph==1.0.8
 
+dj_database_url==3.1.2
+
 pinecone==8.0.1
 
 redis==7.4.0
@@ -35,3 +37,6 @@ pydantic==2.12.5
 SQLAlchemy==2.0.46
 
 sib-api-v3-sdk==7.6.0
+
+
+whitenoise
