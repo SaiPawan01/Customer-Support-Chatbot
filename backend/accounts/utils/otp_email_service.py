@@ -6,8 +6,13 @@ import os
 configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = os.getenv('EMAIL_API_KEY')
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def send_otp(email, otp):
+    logger.info("Attempting to send OTP to email: %s", email)
+
     try:
         api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
             sib_api_v3_sdk.ApiClient(configuration)
@@ -43,16 +48,15 @@ def send_otp(email, otp):
             html_content=html_content
         )
 
-        
         response = api_instance.send_transac_email(send_smtp_email)
 
         return True, response
 
     except ApiException as e:
-        print("Brevo API error:", e)
+        logger.error("API Exception while sending OTP email: %s", str(e))
         return False, str(e)
 
     except Exception as e:
-        print("Unexpected error:", e)
+        logger.error("Unexpected error:", exc_info=True)
         return False, str(e)
     

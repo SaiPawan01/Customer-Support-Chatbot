@@ -9,8 +9,13 @@ load_dotenv()
 configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = os.getenv('EMAIL_API_KEY')
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def build_conversation_html(messages, conversation_title):
+    logger.info(f"Building conversation HTML for email")
+
     rows = ""
 
     for msg in messages:
@@ -55,6 +60,7 @@ def build_conversation_html(messages, conversation_title):
 
 
 def send_email_to_agent(user_id, conversation_id, conversation_title, conversation_history, user_email, user_name):
+    logger.info(f"Sending email to agent for escalation")
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
         sib_api_v3_sdk.ApiClient(configuration)
     )
@@ -111,9 +117,9 @@ def send_email_to_agent(user_id, conversation_id, conversation_title, conversati
 
     try:
         response = api_instance.send_transac_email(send_smtp_email)
-        print("Email sent:", response)
+        logger.info("Email sent successfully: %s", response)
         return True
 
     except ApiException as e:
-        print("Error:", e)
+        logger.error("Error sending email: %s", str(e))
         return False

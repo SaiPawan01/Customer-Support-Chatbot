@@ -8,8 +8,13 @@ from pinecone import Pinecone, ServerlessSpec
 
 load_dotenv()
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def load_pdf(instance):
+    logger.info(f"Loading PDF document")
     if not instance.file:
         return None
 
@@ -25,12 +30,14 @@ def load_pdf(instance):
         return docs
 
     except Exception as e:
-        return None
+        logger.error(f"Error loading PDF document | error={str(e)}")
+        raise Exception("Error loading document")
 
 
 
 
 def chunk_text(docs,instance, chunk_size=1000, overlap=200):
+    logger.info(f"Chunking document into smaller pieces for embedding generation")
     """Chunk text into smaller pieces with overlap."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -62,6 +69,7 @@ def get_embeddings_model():
 
 def generate_embeddings(chunks):
     """Generate embeddings for all chunks in a single request."""
+    logger.info(f"Generating embeddings for document chunks")
     try:
         embeddings_model = get_embeddings_model()
         texts = [chunk.page_content for chunk in chunks]
@@ -77,7 +85,8 @@ def generate_embeddings(chunks):
         return embeddings
 
     except Exception as e:
-        return None
+        logger.error(f"Error generating embeddings | error={str(e)}")
+        raise Exception("Error generating embeddings")
 
 
 
@@ -87,6 +96,7 @@ def get_pinecone_instance():
 
 
 def store_embeddings(vectors):
+    logger.info(f"Storing embeddings in Pinecone vector database")
     index_name = "documents"
 
     # Create index if it doesn't exist
@@ -108,4 +118,4 @@ def store_embeddings(vectors):
     # Upsert in batch
     index.upsert(vectors=vectors)
 
-    pass
+    logger.info(f"Embeddings stored in Pinecone vector database")

@@ -24,7 +24,10 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
         setErrors(prev => ({ ...prev, email: response.data.message || 'something went wrong' }));
       }
     } catch (error) {
-      console.log(error)
+      setErrors(prev => ({
+        ...prev,
+        email: error.response?.data?.message || 'Failed to send OTP. Please try again.'
+      }));
     }
   }
 
@@ -168,12 +171,14 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
           setLoading(false);
           navigate('/chatbot');
         }
+        else{
+          throw new Error(response.data.message);
+        }
       }
     } catch (error) {
       setLoading(false);
       setErrors(prev => ({
-        ...prev,
-        submit: error.response?.data?.message || 'An error occurred. Please try again.'
+        submit: error.response.data.message || 'An error occurred. Please try again.'
       }));
     }
   };

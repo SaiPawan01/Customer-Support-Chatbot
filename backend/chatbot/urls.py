@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateConversationView, DeleteConversationView, CreateMessageView, FetchAllMessage, FetchAllConversations, EscalateToAgentView
+from .views import CreateConversationView, DeleteConversationView, CreateMessageView, FetchAllMessage, FetchAllConversations, EscalateToAgentView, GenerateWidgetResponse
 
 urlpatterns = [
     path('create/conversation', CreateConversationView.as_view(), name='create_conversation'),
@@ -7,5 +7,7 @@ urlpatterns = [
     path('create/message', CreateMessageView.as_view(), name='create_message'),
     path('fetch/message-history', FetchAllMessage.as_view(),name='fetch_history'),
     path('fetch/conversations', FetchAllConversations.as_view(), name='fetch_conversations'),
-    path('send/email', EscalateToAgentView.as_view(), name='send_email_to_agent')
+    path('send/email', EscalateToAgentView.as_view(), name='send_email_to_agent'),
+    
+    path('widget/response', GenerateWidgetResponse.as_view(), name='widget_response'),
 ]

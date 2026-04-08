@@ -11,6 +11,9 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from pydantic import BaseModel, Field
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 load_dotenv()
 
@@ -33,18 +36,22 @@ def get_embeddings_model():
 
 def get_relevant_chunks(query):
     try:
+        logger.info("Retrieving relevant chunks for query")
         embeddings_model = get_embeddings_model()
         pc = get_pinecone_instance()
         index = pc.Index('documents')
         vector = embeddings_model.embed_query(query)
-    except:
-        pass
+    except Exception as e:
+        logger.error(f"Error retrieving relevant chunks for query | error={str(e)}")
+        raise Exception("Error retrieving relevant context")
+
     results = index.query(
         vector=vector,
         top_k=3,
         include_metadata=True,
         namespace=""
     )
+
     context = []
     if results.matches:
         for match in results.matches:
@@ -56,11 +63,15 @@ def get_relevant_chunks(query):
                 })
     return context
 
+
 class SupportResponse(BaseModel):
     response_content: str = Field(description="Final response to the user")
     escalation: bool = Field(description="Whether the query must be escalated to support")
 
-def get_bot_reply(user_query, context, history):
+
+
+def get_bot_reply(user_query, context, history=[]):
+    logger.info(f"Generating bot reply for user query")
     model = get_gemini_model()
     data = "\n\n".join(result["content"] for result in context)
 
@@ -73,11 +84,12 @@ def get_bot_reply(user_query, context, history):
 
     formatted_history = []
 
-    for msg in history[-6:]:
-        if msg["role"] == "user":
-            formatted_history.append(HumanMessage(content=msg["content"]))
-        else:
-            formatted_history.append(AIMessage(content=msg["content"]))
+    if(history != []):
+        for msg in history[-6:]:
+            if msg["role"] == "user":
+                formatted_history.append(HumanMessage(content=msg["content"]))
+            else:
+                formatted_history.append(AIMessage(content=msg["content"]))
     
 
     system_message = '''
@@ -142,10 +154,9 @@ def get_bot_reply(user_query, context, history):
             'user_query': user_query,
             'history': formatted_history
         })
-        # print(parsed_response)
     except Exception as e:
-        pass
-
+        logger.error(f"Error generating bot reply | error={str(e)}")
+        raise Exception("Error generating response")
 
     return response, sources
 
