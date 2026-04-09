@@ -3,7 +3,16 @@ from rest_framework import serializers
 from .models import User
 from django.contrib.auth import authenticate
 
-class UserSerializer(serializers.ModelSerializer):
+from rest_framework import serializers
+
+
+# Register serializer to validate incoming registration data and create a new user.
+class UserInfoSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    email = serializers.EmailField()
+
+
+class RegisterRequestSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -12,7 +21,6 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
-
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -24,7 +32,15 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class LoginSerializer(serializers.Serializer):
+class RegisterResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    user = UserInfoSerializer(allow_null=True)
+
+
+
+# Login serializer to validate incoming login data and authenticate the user.
+class LoginRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
@@ -42,3 +58,22 @@ class LoginSerializer(serializers.Serializer):
 
         data["user"] = user
         return data
+    
+
+class LoginResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    access_token = serializers.CharField(allow_null=True)
+
+
+
+class ProtectedResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+
+
+
+# Default response serializer for OTP generation
+class ResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()

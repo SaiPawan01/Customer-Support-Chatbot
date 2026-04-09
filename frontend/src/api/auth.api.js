@@ -26,7 +26,10 @@ export const refreshToken = () => {
 
 export const logoutUser = () => {
     return api.post("api/logout/", {}, {
-        withCredentials: true
+        headers:{
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            
+        },withCredentials: true
     });
 }
 

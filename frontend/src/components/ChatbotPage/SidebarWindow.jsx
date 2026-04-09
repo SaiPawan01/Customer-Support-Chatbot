@@ -20,7 +20,7 @@ function SidebarWindow() {
                 navigate('/login');
             }
         } catch (error) {
-            console.error("Logout error:", error);
+            console.error("Logout error:", error.message);
         }
     }
 

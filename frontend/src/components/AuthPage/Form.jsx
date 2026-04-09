@@ -21,7 +21,7 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
         setOtpSent(true);
       }
       else if (response.data && !response.data.success) {
-        setErrors(prev => ({ ...prev, email: response.data.message || 'something went wrong' }));
+        setErrors(prev => ({ email: response.data.message || 'something went wrong' }));
       }
     } catch (error) {
       setErrors(prev => ({
@@ -157,6 +157,7 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
             agreeTerms: false,
             otp: ''
           });
+          setErrors({});
         }
       }
       else {

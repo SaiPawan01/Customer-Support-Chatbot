@@ -86,12 +86,18 @@ export function ChatbotContextProvider({ children }) {
                 });
                 setLoading(false);
             }
-            else {
-                console.log(response)
-            }
         } catch (error) {
             setLoading(false);
-            console.log("error occured while geting bot reply" + error)
+            setMessages(prev => ({
+                ...prev,
+                messagesData: [...prev.messagesData, {
+                    id: uuidv4(),
+                    role: 'assistant',
+                    content: "Sorry, I'm having trouble connecting to the server. Please try again!.",
+                    created_at: new Date().toLocaleString()
+                }]
+            }));
+            console.log(`error fetching bot reply ${error}`);
         }
 
     };

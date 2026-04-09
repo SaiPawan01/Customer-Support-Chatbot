@@ -120,6 +120,11 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 
+CORS_ALLOW_HEADERS = [
+    'authorization',
+    'content-type',
+]
+
 
 # Application definition
 
@@ -132,6 +137,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'drf_spectacular',
     'corsheaders',
 
     'accounts',
@@ -232,6 +238,27 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Support Chatbot API Documentation',
+    'DESCRIPTION': 'API with JWT authentication',
+    'VERSION': '1.0.0',
+
+    'COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
+
+    'SECURITY': [
+        {'BearerAuth': []}
+    ],
 }
 
 SIMPLE_JWT = {

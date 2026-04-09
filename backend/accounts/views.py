@@ -1,4 +1,5 @@
 import email
+from http.client import responses
 import os
 
 from rest_framework.views import APIView
@@ -9,11 +10,14 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer, LoginSerializer
+from rest_framework.permissions import AllowAny
+from .serializers import RegisterRequestSerializer, RegisterResponseSerializer, LoginRequestSerializer, LoginResponseSerializer, ProtectedResponseSerializer, ResponseSerializer
 import random
 from .utils.otp_email_service import send_otp
 from .utils.redis_cache import store_otp, verify_otp
 from .models import User
+
+from drf_spectacular.utils import extend_schema
 
 import logging
 
@@ -21,23 +25,34 @@ logger = logging.getLogger(__name__)
 
 
 # Register API view to handle user registeration requests.
+@extend_schema(
+    tags=["Authentication"],
+    description="API endpoint to register a new user by providing their first name, last name, email and password. Returns success status, message and user details on successful registration.",
+    request=RegisterRequestSerializer,
+    responses={
+        201: RegisterResponseSerializer,
+        400: RegisterResponseSerializer,
+        500: RegisterResponseSerializer
+    },
+    summary="User Registration API"
+)
 class RegisterView(APIView):
-    def post(self,request):
+    permission_classes = [AllowAny]
 
+    def post(self,request):
+        
         logger.info("Register API called")
 
-        serializer = UserSerializer(data=request.data,context={'request':request})
+        serializer = RegisterRequestSerializer(data=request.data,context={'request':request})
 
         # Validation is handled by the serializer, but we can catch the exception to return a custom response
         if not serializer.is_valid():
-            logger.warning(
-                "Registration validation failed | errors=%s",
-                serializer.errors
-            )
-            return Response({
+            logger.warning("Registration validation failed | errors=%s",serializer.errors)
+            return Response(RegisterResponseSerializer({
                 "success" : False,
                 "message" : "Data Validation Failed",
-            },
+                "user": None
+            }).data,
             status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -47,25 +62,30 @@ class RegisterView(APIView):
                 "User registered successfully | email=%s",
                 user.email
             )
-            return Response(
-                {
+
+            response = {
                     "success": True,
                     "message": "Signup successful",
                     "user": {
                         "name": f"{serializer.data.get('first_name')} {serializer.data.get('last_name')}",
                         "email": serializer.data.get('email'),
                     }
-                },
+                }
+            response_serializer = RegisterResponseSerializer(response)
+            return Response(
+                response_serializer.data,
                 status=status.HTTP_201_CREATED,
             )
+        
         except IntegrityError:
             logger.warning(
                 "Registration failed - email already exists")
             # failure due to unique constraint violation (email already exists)
-            return Response({
+            return Response(RegisterResponseSerializer({
                 "success": False,
                 "message": "Email already exists",
-            },
+                "user": None
+            }).data,
                 status=status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
@@ -73,38 +93,53 @@ class RegisterView(APIView):
                 "Unexpected error during registration"
             )
             # failure due to any other unexpected errors
-            return Response({
+            return Response(RegisterResponseSerializer({
                 "success": False,
                 "message": "something went wrong, please try again!",
-            },status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                "user": None
+            }).data,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
 
 # Login API view to handle user login requests and token generation
+@extend_schema(
+    tags=["Authentication"],
+    description="API endpoint to login a user by providing their email and password. Returns success status, message and access token on successful login.",
+    request=LoginRequestSerializer,
+    responses={
+        200: LoginResponseSerializer,
+        401: LoginResponseSerializer
+    },
+    summary="User Login API"
+)
 class LoginView(APIView):
-    def post(self, request):
+    permission_classes = [AllowAny]
 
+    def post(self, request):
         logger.info("Login API called")
 
-        serializer = LoginSerializer(data=request.data)
+        serializer = LoginRequestSerializer(data=request.data)
+
         try:
              serializer.is_valid(raise_exception=True)
              user = serializer.validated_data["user"]
         except Exception as e:
-            logger.warning(
-                "Login failed - invalid credentials")
-            return Response(
-                {"success": False, "message": "Invalid email or password"},status=status.HTTP_401_UNAUTHORIZED
-            )
-       
+            logger.warning("Login failed - invalid credentials")
+            return Response(LoginResponseSerializer({
+                "success": False,
+                "message": "Invalid email or password",
+                "access_token": None
+            }).data, status=status.HTTP_401_UNAUTHORIZED)
+
+
         refresh = RefreshToken.for_user(user)
-        response = Response(
-            {
-                "success": True,
-                "message": "Login successful",
-                "access_token": str(refresh.access_token),
-            },
+        response = Response(LoginResponseSerializer({
+            "success": True,
+            "message": "Login successful",
+            "access_token": str(refresh.access_token),
+        }).data,
             status=status.HTTP_200_OK,
         )
 
@@ -124,20 +159,39 @@ class LoginView(APIView):
 
 
 # Protected API view to test access with valid JWT token.
+@extend_schema(
+    tags=["Authentication"],
+    description="API endpoint to test access with a valid JWT token.",
+    responses={
+        200: ProtectedResponseSerializer,
+    },
+    summary="Protected Resource API"
+)
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        return Response(
-            {
-                "success": True,
-                "message": "Token is valid. Access granted to protected resource.",
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response(ProtectedResponseSerializer({
+            "success": True,
+            "message": "Token is valid. Access granted to protected resource.",
+        }).data, status=status.HTTP_200_OK)
 
 
 # API view to handle refresh token requests and generate new access tokens.
+@extend_schema(
+    tags=["OTP Generation andVerification"],
+    description="API endpoint to refresh access token using the refresh token stored in HTTP-only cookie. Returns new access token on successful refresh.",
+    responses={
+        200: LoginResponseSerializer,
+        400: LoginResponseSerializer,
+        401: LoginResponseSerializer
+    },
+    summary="Refresh Token API"
+)
 class RefreshTokenView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def post(self, request):
         logger.info("Refresh Token API called")
 
@@ -145,40 +199,55 @@ class RefreshTokenView(APIView):
 
         if not refresh_token:
             logger.warning("Refresh Token API called without refresh token")
-            return Response(
-                {"success": False, "message": "Refresh token not provided"},
-                status=status.HTTP_400_BAD_REQUEST,
+            return Response(LoginResponseSerializer({
+                        "success": False, 
+                        "message": "Refresh token not provided",
+                        "access_token": None}).data,
+                        status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             refresh = RefreshToken(refresh_token)
             new_access_token = str(refresh.access_token)
             logger.info("Access token refreshed successfully")
-            return Response(
-                {
+            return Response(LoginResponseSerializer({
                     "success": True,
                     "message": "Access token refreshed successfully",
                     "access_token": new_access_token,
-                },
+                }).data
+                ,
                 status=status.HTTP_200_OK,
             )
         except TokenError:
             logger.warning("Refresh Token API called with invalid refresh token")
-            return Response(
-                {"success": False, "message": "session timed out, please login again"},
-                status=status.HTTP_401_UNAUTHORIZED
+            return Response(LoginResponseSerializer({
+                        "success": False, 
+                        "message": "session timed out, please login again",
+                        "access_token": None}).data,
+                        status=status.HTTP_401_UNAUTHORIZED
             )
 
 
 # API view to handle user logout by deleting the refresh token cookie. 
+@extend_schema(
+    tags=["Authentication"],
+    description="API endpoint to logout a user by deleting the refresh token cookie. Returns success status and message on successful logout.",
+    responses={
+        200: LoginResponseSerializer,
+    },
+    summary="User Logout API"
+)
 class LogoutView(APIView):
+    # permission_classes = [IsAuthenticated]
+
     def post(self, request):
         logger.info("Logout API called")
-        response = Response(
-            {
+        response = Response(LoginResponseSerializer({
                 "success": True,
-                "message": "Logged out successfully"
-            },
+                "message": "Logged out successfully",
+                "user": None
+            }).data
+            ,
             status=status.HTTP_200_OK,
         )
         response.delete_cookie("refresh_token", path="/")
@@ -187,25 +256,39 @@ class LogoutView(APIView):
 
 
 # API view to handle email verification by sending OTP to user's email and storing it in Redis cache for later verification.
-class EmailVerificationView(APIView):
+@extend_schema(
+    tags=["OTP Generation andVerification"],
+    description="API endpoint to send OTP to user's email for verification during registration. Returns success status and message on successful OTP generation and sending.",
+    request=ResponseSerializer,
+    responses={
+        200: ResponseSerializer,
+        400: ResponseSerializer,
+        500: ResponseSerializer
+    },
+    summary="OTP Generation API"
+)
+class OTPGenerateView(APIView):
+    permission_classes = [AllowAny]
+    
     def post(self, request):
         try:
-            logger.info("Email Verification API called")
+            logger.info("OTP Generation API called")
 
             email = request.data.get('email')
 
             if not email:
-                logger.warning("Email Verification API called without email")
-                return Response(
-                    {"success": False, "message": "Email is required"},
+                logger.warning("OTP Generation API called without email")
+                return Response(ResponseSerializer({"success": False, "message": "Email is required"}).data,
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
             user_exists = User.objects.filter(email=email).exists()
 
             if user_exists:
-                logger.warning("Email Verification API called with existing email")
-                return Response({"success": False, "message": "Email already registered"})
+                logger.warning("OTP Generation API called with existing email")
+                return Response(ResponseSerializer({"success": False, "message": "Email already registered"}).data,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
 
             otp = random.randint(100000, 999999)
@@ -215,46 +298,49 @@ class EmailVerificationView(APIView):
                 store_otp(email, otp)
                 logger.info("OTP sent successfully for email verification")
                 return Response(
-                    {
-                        "success": True,
-                        "message": f"OTP sent to {email}"
-                    },
+                    ResponseSerializer({"success": True, "message": f"OTP sent to {email}"}).data,
                     status=status.HTTP_200_OK
                 )
             
             logger.warning("Failed to send OTP for email verification | error=%s", error)
             return Response(
-                {
-                    "success": False,
-                    "message": "Failed to send OTP",
-
-                },
+                ResponseSerializer({"success": False, "message": "Failed to send OTP"}).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         except Exception as e:
             logger.error("Unexpected error during email verification | error=%s", str(e))
             return Response(
-                {
-                    "success": False,
-                    "message": "Failed to send OTP, try again later",
-                },
+                ResponseSerializer({"success": False, "message": "Failed to send OTP, try again later"}).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
 
 # API view to handle OTP verification by checking the provided OTP against the one stored in Redis cache for the given email.
+@extend_schema(
+    tags=["OTP Generation andVerification"],
+    description="API endpoint to verify OTP for user's email. Returns success status and message on successful OTP verification.",
+    request=ResponseSerializer,
+    responses={
+        200: ResponseSerializer,
+        400: ResponseSerializer,
+        500: ResponseSerializer
+    },
+    summary="OTP Verification API"
+)
 class OTPVerificationView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
+        logger.info("OTP Verification API called")
+
         try:
-            logger.info("OTP Verification API called")
             email = request.data.get('email')
             otp = request.data.get('otp')
 
             if not email or not otp:
                 logger.warning("OTP Verification API called without email or otp")
-                return Response(
-                    {"success": False, "message": "Email and OTP are required"},
+                return Response(ResponseSerializer({"success": False, "message": "Email and OTP are required"}).data,
                     status=status.HTTP_409_CONFLICT
                 )
 
@@ -262,72 +348,37 @@ class OTPVerificationView(APIView):
 
             if not is_valid:
                 logger.warning("OTP verification failed")
-                return Response(
-                    {"success": False, "message": error_message},
+                return Response(ResponseSerializer({"success": False, "message": error_message}).data,
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
             logger.info("OTP verified successfully")
             return Response(
-                {"success": True, "message": "OTP verified successfully"},
+                ResponseSerializer({"success": True, "message": "OTP verified successfully"}).data,
                 status=status.HTTP_200_OK
             )
         except Exception as e:
             logger.error("Unexpected error during OTP verification | error=%s", str(e))
             return Response(
-                {
-                    "success": False,
-                    "message": "Internal server error",
-                    "error": str(e)
-                },
+                ResponseSerializer({"success": False, "message": "Internal server error", "error": str(e)}).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
 
+# API view to handle OTP generation for password reset by sending OTP to user's email and storing it in Redis cache for later verification.
+@extend_schema(
+    tags=["OTP Generation and Verification"],
+    description="API endpoint to send OTP to user's email for password reset. Returns success status and message on successful OTP generation and sending.",
+    responses={
+        200: ResponseSerializer,
+        400: ResponseSerializer,
+        500: ResponseSerializer
+    },
+    summary="Password Reset OTP Generation API"
+)
+class OTPGenerateForPasswordResetView(APIView):
+    permission_classes = [AllowAny]
 
-# API view to handle password reset by verifying the provided OTP and allowing the user to set a new password if OTP is valid.
-class ResetPasswordVerificationView(APIView):
-    def post(self, request):
-        try:
-            logger.info("Reset Password Verification API called")
-            email = request.data.get('email')
-            otp = request.data.get('otp')
-
-            print("email is :" , email, type(email))
-            print("otp is :" , otp, type(otp))
-
-            if not email or not otp:
-                logger.warning("Reset Password Verification API called without email or otp")
-                return Response(
-                    {"success": False, "message": "Email and OTP are required"},
-                    status=status.HTTP_409_CONFLICT
-                )
-
-            is_valid, error_message = verify_otp(email, otp)
-
-            if not is_valid:
-                logger.warning("password reset OTP verification failed")
-                return Response(
-                    {"success": False, "message": error_message},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            logger.info("Password reset OTP verified successfully")
-            return Response(
-                {"success": True, "message": "OTP verified successfully"},
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            logger.error("Unexpected error during password reset OTP verification | error=%s", str(e))
-            return Response(
-                {
-                    "success": False,
-                    "message": "Otp verification failed",
-                }
-            )
-
-
-# API view to handle password reset by sending OTP to user's email and allowing them to set a new password after verifying the OTP.
-class ResetOTPView(APIView):
     def post(self, request):
         try:
             logger.info("Reset OTP API called")
@@ -335,15 +386,13 @@ class ResetOTPView(APIView):
 
             if not email:
                 logger.warning("Reset OTP API called without email")
-                return Response(
-                    {"success": False, "message": "Email is required"},
-                )
+                return Response(ResponseSerializer({"success": False, "message": "Email is required"}).data)
 
             user_exists = User.objects.filter(email=email).exists()
 
             if not user_exists:
                 logger.warning("Reset OTP API called with unregistered email")
-                return Response({"success": False, "message": "Email not registered"})
+                return Response(ResponseSerializer({"success": False, "message": "Email not registered"}).data)
 
 
             otp = random.randint(100000, 999999)
@@ -353,34 +402,43 @@ class ResetOTPView(APIView):
             if success:
                 store_otp(email, otp)
                 logger.info("OTP sent successfully for password reset")
-                return Response(
-                    {
+                return Response(ResponseSerializer({
                         "success": True,
                         "message": f"OTP sent to {email}"
-                    },
+                    }).data,
                     status=status.HTTP_200_OK
                 )
             
             logger.warning("Failed to send OTP for password reset | error=%s", error)
-            return Response(
-                {
+            return Response(ResponseSerializer({
                     "success": False,
                     "message": "Failed to send OTP",
-                    "error": error
-                }
+                }).data
             )
 
         except Exception as e:
             logger.error("Unexpected error during OTP generation | error=%s", str(e))
-            return Response(
-                {
+            return Response(ResponseSerializer({
                     "success": False,
                     "message": "otp generation failed",
-                }
+                })
             )
-        
+
+
+
 
 # API view to handle password reset by allowing the user to set a new password after verifying the OTP sent to their email.
+@extend_schema(
+    tags=["Password Reset"],
+    description="API endpoint to reset user's password after verifying OTP sent to their email. Returns success status and message on successful password reset.",
+    request=ResponseSerializer,
+    responses={
+        200: ResponseSerializer,
+        400: ResponseSerializer,
+        500: ResponseSerializer
+    },
+    summary="Password Reset API"
+)
 class ResetPasswordView(APIView):
     def post(self, request):
         try:
@@ -390,31 +448,34 @@ class ResetPasswordView(APIView):
 
             if not email or not new_password:
                 logger.warning("Reset Password API called without required fields")
-                return Response(
-                    {"success": False, "message": "Email and new password are required"},
+                return Response(ResponseSerializer({"success": False, "message": "Email and new password are required"}).data,
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
             user = User.objects.filter(email=email).first()
 
             if not user:
                 logger.warning("Reset Password API called with unregistered email")
-                return Response({"success": False, "message": "Email not registered"})
+                return Response(ResponseSerializer({"success": False, "message": "Email not registered"}).data,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             user.set_password(new_password)
             user.save()
 
             logger.info("Password reset successfully for email=%s", email)
             return Response(
-                {"success": True, "message": "Password reset successful"},
+                ResponseSerializer({"success": True, "message": "Password reset successful"}).data,
                 status=status.HTTP_200_OK
             )
 
         except Exception as e:
             logger.error("Unexpected error during password reset | error=%s", str(e))
-            return Response(
-                {
+            return Response(ResponseSerializer({
                     "success": False,
                     "message": "Password reset failed",
-                    "error": str(e)
-                }
+                }).data,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
