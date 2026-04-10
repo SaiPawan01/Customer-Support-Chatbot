@@ -1,3 +1,4 @@
+
 ﻿# 🤖 Customer Support Chatbot for Internal Documentation
 
 An AI-powered customer support chatbot that leverages **semantic search + LLMs** to retrieve accurate answers from internal knowledge Base. The system intelligently **escalates low-confidence queries to human agents**, ensuring reliability and scalability.
@@ -287,4 +288,4 @@ MIT License
 
 ## 👨‍💻 Author
 
-**Sai Pawan**    
+=======
