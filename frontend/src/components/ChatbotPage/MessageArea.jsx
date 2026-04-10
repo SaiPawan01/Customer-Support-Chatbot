@@ -1,4 +1,4 @@
-import React, {useContext} from 'react'
+import React, {useContext, useState} from 'react'
 import { Paperclip, FileText, ThumbsUp, ThumbsDown, Copy } from 'lucide-react'
 import { createConversation } from '../../api/bot.api';
 import ReactMarkdown from "react-markdown";
@@ -16,11 +16,19 @@ function MessageArea() {
     setActiveConversation,
     activeConversation,
     escalationStatus,
+    fetchMessages,
 } = useContext(ChatbotContext);
 
+    const [error, setError] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if(e.target.title.value.trim() === ""){
+            setError("Title cannot be empty");
+            return;
+        }
+        setError(false);
 
         const data = {
             title: e.target.title.value.trim()
@@ -32,15 +40,14 @@ function MessageArea() {
             if (response.data && response.data.data) {
                 setConversations(prev => [response.data.data, ...prev])
                 setActiveConversation(response.data.data.id)
-                setNewConversation(false)
-                setMessages({
-                    messagesData: [],
-                    conversationStatus: 'active',
-                })
+                setNewConversation(false);
+                await fetchMessages(response.data.data.id,'active');
             }
         }
         catch (error) {
-            console.log("FULL ERROR:", error.response?.data);
+            setActiveConversation(null);
+            setNewConversation(false);
+            console.log(`Error creating conversation: ${error}`);
         }
     }
     if (activeConversation == null && newConversation == false) {
@@ -89,9 +96,10 @@ function MessageArea() {
                             type="submit"
                             className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-2xl text-sm font-medium transition"
                         >
-                            Send
+                            Create Conversation
                         </button>
                     </form>
+                    {error && <p className="text-red-400 text-sm">{error}</p>}
                 </div>
             </div>) : (messages.messagesData || []).map((message, idx) => (
                 <div

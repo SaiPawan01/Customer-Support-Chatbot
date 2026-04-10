@@ -238,7 +238,7 @@ class RefreshTokenView(APIView):
     summary="User Logout API"
 )
 class LogoutView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         logger.info("Logout API called")
@@ -318,7 +318,7 @@ class OTPGenerateView(APIView):
 
 # API view to handle OTP verification by checking the provided OTP against the one stored in Redis cache for the given email.
 @extend_schema(
-    tags=["OTP Generation andVerification"],
+    tags=["OTP Generation and Verification"],
     description="API endpoint to verify OTP for user's email. Returns success status and message on successful OTP verification.",
     request=ResponseSerializer,
     responses={

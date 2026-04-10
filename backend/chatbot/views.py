@@ -12,8 +12,9 @@ from drf_spectacular.utils import extend_schema
 from .models import Conversation, Message
 from .serializers import ConversationRequestSerializer, ConversationResponseSerializer, ResponseSerializer, ConversationListSerializer
 from .utils.chatbot_logic import get_relevant_chunks, get_bot_reply
-
 from .utils.email_service import send_email_to_agent
+
+from .models import Message
 
 import logging
 
@@ -54,6 +55,13 @@ class CreateConversationView(APIView):
                 )
 
             serializer.save(user=request.user)
+
+            Message.objects.create(
+                conversation=serializer.instance,
+                sender='assistant',
+                message="Hello! How can I assist you today?",
+            ).save()
+
 
             logger.info(f"Conversation created successfully.")
             return Response(ConversationResponseSerializer({

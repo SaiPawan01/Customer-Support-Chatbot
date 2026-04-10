@@ -1,4 +1,5 @@
 from audioop import avg
+import json
 
 from langchain_classic.chains.summarize.map_reduce_prompt import prompt_template
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -6,6 +7,7 @@ from documents.utils.document_processing import get_pinecone_instance
 from dotenv import load_dotenv
 import os
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_groq import ChatGroq
 from langchain.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
@@ -22,10 +24,19 @@ def get_gemini_model():
         model="gemini-2.5-flash",
         google_api_key=os.getenv("GOOGLE_API_KEY"),
         temperature=0.2,
-        max_tokens=512,
+        max_tokens=None,
         max_retries=2,
     ).with_structured_output(SupportResponse)
 
+def get_groq_model():
+    return ChatGroq(
+        model="qwen/qwen3-32b",
+        temperature=0.2,
+        groq_api_key=os.getenv("GROQ_API_KEY"),
+        model_kwargs={
+            "response_format": {"type": "json_object"}
+        }
+    )
 
 def get_embeddings_model():
     return GoogleGenerativeAIEmbeddings(
@@ -72,9 +83,7 @@ class SupportResponse(BaseModel):
 
 def get_bot_reply(user_query, context, history=[]):
     logger.info(f"Generating bot reply for user query")
-    model = get_gemini_model()
     data = "\n\n".join(result["content"] for result in context)
-
     sources = {
         os.path.basename(result["metadata"]["source"])
         for result in context
@@ -146,17 +155,32 @@ def get_bot_reply(user_query, context, history=[]):
         ("human", human_message)
     ])
 
-    chain = prompt_template | model 
     
     try:
+        model = get_gemini_model()
+        chain = prompt_template | model 
         response = chain.invoke({
             'data': data,
             'user_query': user_query,
             'history': formatted_history
         })
     except Exception as e:
-        logger.error(f"Error generating bot reply | error={str(e)}")
-        raise Exception("Error generating response")
+        logger.error(f"Error generating bot reply fallback activated | error={str(e)}")
+        try:
+            groq_model = get_groq_model()
+            chain = prompt_template | groq_model
+            response = chain.invoke({
+                'data': data,
+                'user_query': user_query,
+                'history': formatted_history
+            })
+            return SupportResponse(**json.loads(response.content)), sources
+        except Exception as e:
+            logger.error("Failed to parse Groq response", exc_info=True)
+            return SupportResponse(
+                response_content="I'm sorry, but I couldn't process your request due to an internal error.",
+                escalation=True
+            )
 
     return response, sources
 
