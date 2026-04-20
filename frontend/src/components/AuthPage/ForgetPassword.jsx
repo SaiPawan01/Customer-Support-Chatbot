@@ -1,101 +1,139 @@
 import { useState } from "react";
 import { sendResetPasswordOtp, verifyResetPasswordOtp, resetPassword } from "../../api/auth.api.js";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Code, MessageCircle, Eye, Lock, EyeOff } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
+
+import EmailInput from "../../elements/EmailInput.jsx";
+import OtpInput from "../../elements/OtpInput.jsx";
 
 export default function ForgotPassword() {
     const [data, setData] = useState({ "email": '', "otp": '', 'password': '', 'confirmPassword': '' });
+
+    // formStaus 0 -> email verification, 1 -> otp verification, 2 -> password reset
+    const [formStatus, setFormStatus] = useState(0);
+    const [showPassword, setShowPassword] = useState({'password': false, 'confirmPassword': false});
+    const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const [fieldStatus, setFieldStatus] = useState({ 'otp': false, 'password': false })
-    const [verificationState, setVerificationState] = useState('email')
-    const [showPassword, setShowPassword] = useState({
-        'password': false,
-        'confirmPassword': false
-    });
+
     const navigate = useNavigate();
 
+
+    // handles Input change for all form fields and updates the corresponding state values
     function handleInputChange(e) {
         const { name, value } = e.target;
         setData(prev => ({ ...prev, [name]: value }))
         setErrors(prev => ({...prev, [name]:''}))
         if(name === 'email'){
-            setVerificationState('email');
-            setFieldStatus({ 'otp': false, 'password': false })
+            setFormStatus(0);
             setData({email : value, otp: '', password:'', confirmPassword: ''})
         }
     }
 
+
     // Validates email format using a regular expression
     const validateEmailRegex = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
         return emailRegex.test(email);
     };
 
+
+    // sends OTP to the provided email if it's valid and updates the component state based on the response
+    const sendOtp = async () => {
+        if (validateEmailRegex(data.email) === false) {
+            setErrors({ email: 'Please enter a valid email address' });
+            return;
+        }
+        
+        try{
+            setLoading(true);
+            const response = await sendResetPasswordOtp(data.email);
+            if (response?.data?.success === true) {
+                setFormStatus(1);
+                setErrors({});
+            }
+        }catch(error){
+            setErrors({ email: error?.response?.data?.message || 'Error sending OTP' });
+        }
+        finally{
+            setLoading(false);
+        }
+    }
+
+
+    // verifies the entered OTP and updates the component state to show password fields if OTP is correct
+    const verifyOtp = async () => {
+        if (data.otp === '' || data.otp.length !== 6) {
+            setErrors({ otp: 'Enter valid 6-digit OTP' });
+            return;
+        }
+
+        try{
+            setLoading(true);
+            const response = await verifyResetPasswordOtp(data.email, data.otp);
+            console.log(response)
+            if (response?.data?.success) {
+                setFormStatus(2);
+                setErrors({});
+            }
+        }catch(error){
+            setErrors({ otp: error?.response?.data?.message || 'Error verifying OTP' });
+        }
+        finally{
+            setLoading(false);
+        }
+    }
+
+
+    // validates the new password and confirm password fields and sends a request to reset the password if validations pass
+    const resetPasswordHandler = async () => {
+        let newErrors = {};
+
+        if (!data.password || data.password.length < 6) {
+            newErrors.password = 'Password must be at least 6 characters';
+        }
+
+        if (data.password !== data.confirmPassword) {
+            newErrors.confirmPassword = 'Passwords do not match';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        try{
+            setLoading(true);
+            const response = await resetPassword(data.email, data.password);
+            if (response?.data?.success) {
+                setErrors({});
+                setLoading(false);
+                setFormStatus(3);
+                setTimeout(() => {
+                    navigate('/login');
+                }, 3000);
+            }
+        }
+        catch(error){
+            setErrors({password: error?.response?.data?.message || 'Error resetting password'})
+        }
+    }
+
+
+    // handles form submission by determining which step of the password reset process the user is in and calling the appropriate function to handle that step
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
-            // SEND OTP
-            if (!fieldStatus.otp) {
-                if (!validateEmailRegex(data.email)) {
-                    setErrors({ email: 'Invalid Email' });
-                    return;
-                }
-
-                const response = await sendResetPasswordOtp(data.email);
-                if (response.data.success) {
-                    setFieldStatus(prev => ({ ...prev, otp: true }));
-                    setVerificationState("otp");
-                    setErrors({});
-                } else {
-                    setErrors({ email: response.data.message });
-                }
+            if(formStatus === 0){
+                await sendOtp();
             }
-
-            // VERIFY OTP
-            else if (!fieldStatus.password) {
-                if (!data.otp || data.otp.length !== 6) {
-                    setErrors({ otp: 'Enter valid 6-digit OTP' });
-                    return;
-                }
-
-                const response = await verifyResetPasswordOtp(data.email,data.otp)
-                console.log(response)
-                if(response.data && response.data.success){
-                    setFieldStatus(prev => ({ ...prev, password: true }));
-                    setVerificationState("password");
-                    setErrors({});
-                }
-                else{
-                    setErrors({otp: response.data.message})
-                }
+            else if (formStatus === 1) {
+                await verifyOtp();
             }
-
-            // RESET PASSWORD
             else {
-                let newErrors = {};
-
-                if (!data.password || data.password.length < 6) {
-                    newErrors.password = 'Password must be at least 6 characters';
-                }
-
-                if (data.password !== data.confirmPassword) {
-                    newErrors.confirmPassword = 'Passwords do not match';
-                }
-
-                if (Object.keys(newErrors).length > 0) {
-                    setErrors(newErrors);
-                    return;
-                }
-
-                const response = await resetPassword(data.email, data.password);
-                if (response.data && response.data.success) {
-                    setErrors({});
-                    navigate('/login');
-                }   
+                await resetPasswordHandler();
             }
         } catch (error) {
-            console.log(error);
+            console.log(error?.response?.data?.message);
         }
     };
 
@@ -117,141 +155,53 @@ export default function ForgotPassword() {
 
                 {/* Card Container */}
                 <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-                    <form onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                        }
-                    }} onSubmit={handleSubmit} className="space-y-3">
+                    <form onSubmit={handleSubmit} className="space-y-3">
 
                         {/* Email Field */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Email Address
-                            </label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={data.email}
-                                    onChange={handleInputChange}
-                                    placeholder="you@example.com"
-                                    className={`w-full pl-10 pr-4 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.email ? 'border-red-500' : 'border-slate-600'
-                                        }`}
-                                />
-                            </div>
+                        <EmailInput data={data} errors={errors} handleInputChange={handleInputChange}>
                             {errors.email && (
                                 <p className="text-red-400 text-sm mt-1">{errors.email}</p>
                             )}
-                        </div>
+                            {formStatus === 2 && <p className="text-green-400 text-sm mt-1">OTP verified! Please enter your new password.</p>}
+                        </EmailInput>
 
 
-                        {fieldStatus['otp'] && <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Enter OTP
-                            </label>
-                            <div className="relative">
-                                <Code className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-                                <input
-                                    type="text"
-                                    name="otp"
-                                    value={data.otp}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter six digit OTP..."
-                                    className={`w-full pl-10 pr-4 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.email ? 'border-red-500' : 'border-slate-600'
-                                        }`}
-                                />
-                            </div>
+                        {/* OTP Field */}
+                        {formStatus === 1 && <OtpInput data={data} errors={errors} handleInputChange={handleInputChange} isLogin={false} emailVerified={false} handleOTPVerification={verifyOtp}>
                             {errors.otp && (
                                 <p className="text-red-400 text-sm mt-1">{errors.otp}</p>
                             )}
-                        </div>}
+                            </OtpInput>}
 
 
-                        {fieldStatus['password'] && <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-                                <input
-                                    type={showPassword['password'] ? 'text' : 'password'}
-                                    name="password"
-                                    value={data.password}
-                                    onChange={handleInputChange}
-                                    placeholder="••••••••"
-                                    className={`w-full pl-10 pr-10 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.password ? 'border-red-500' : 'border-slate-600'
-                                        }`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(prev => ({ ...prev, 'password': !prev['password'] }))}
-                                    className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 transition"
-                                >
-                                    {showPassword['password'] ? (
-                                        <EyeOff className="w-5 h-5" />
-                                    ) : (
-                                        <Eye className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </div>
-                            {errors.password && (
-                                <p className="text-red-400 text-sm mt-1">{errors.password}</p>
-                            )}
-                        </div>}
+
+                        {formStatus === 2 && <PasswordInput data={formData} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} />}
 
 
-                        {fieldStatus['password'] && <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Confirm Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-                                <input
-                                    type={showPassword['confirmPassword'] ? 'text' : 'password'}
-                                    name="confirmPassword"
-                                    value={data.confirmPassword}
-                                    onChange={handleInputChange}
-                                    placeholder="••••••••"
-                                    className={`w-full pl-10 pr-10 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.confirmPassword ? 'border-red-500' : 'border-slate-600'
-                                        }`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(prev => ({ ...prev, 'confirmPassword': !prev['confirmPassword'] }))}
-                                    className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 transition"
-                                >
-                                    {showPassword['confirmPassword'] ? (
-                                        <EyeOff className="w-5 h-5" />
-                                    ) : (
-                                        <Eye className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </div>
-                            {errors.confirmPassword && (
-                                <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>
-                            )}
-                        </div>
-                        }
+                        {formStatus === 2 && <PasswordInput data={formData} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} confirmPassword={true}/>}
+
+                        {formStatus == 3 && <p className="text-green-400 text-sm mt-1">Password reset successful!</p>}
+
 
                         <div className="flex justify-end">
                             <Link
                                 to="/login"
                                 className="text-sm text-blue-400 hover:text-blue-300 transition"
                             >
-                                back to login
+                                Sign In Instead
                             </Link>
                         </div>
 
                         {/* Submit Button */}
                         <button
                             type="submit"
-
+                            disabled={loading}
                             className="w-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
                         >
-                            {verificationState == 'email' && 'Send OTP'}
-                            {verificationState == 'otp' && 'Verify OTP'}
-                            {verificationState == 'password' && 'Change Password'}
+                            {formStatus == 0 && 'Send OTP'}
+                            {formStatus == 1 && 'Verify OTP'}
+                            {formStatus == 2 && 'Change Password'}
+                            {formStatus == 3 && 'Redirecting to Login...'}
                         </button>
                     </form>
                 </div>

@@ -88,7 +88,7 @@ class RegisterView(APIView):
             }).data,
                 status=status.HTTP_400_BAD_REQUEST)
         
-        except Exception as e:
+        except Exception:
             logger.error(
                 "Unexpected error during registration"
             )
@@ -125,7 +125,7 @@ class LoginView(APIView):
         try:
              serializer.is_valid(raise_exception=True)
              user = serializer.validated_data["user"]
-        except Exception as e:
+        except Exception:
             logger.warning("Login failed - invalid credentials")
             return Response(LoginResponseSerializer({
                 "success": False,

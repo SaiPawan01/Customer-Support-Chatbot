@@ -1,10 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 import features from '../../data/features.jsx'
 
 function Features(){
-    const [hoveredCard, setHoveredCard] = useState(null);
-
     return <>
     {/* Features Section */}
       <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
@@ -17,16 +15,10 @@ function Features(){
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, idx) => (
+            {features.map((feature) => (
               <div
-                key={idx}
-                onMouseEnter={() => setHoveredCard(idx)}
-                onMouseLeave={() => setHoveredCard(null)}
-                className={`p-8 rounded-xl border transition-all duration-300 ${
-                  hoveredCard === idx
-                    ? 'bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-500/20 transform scale-105'
-                    : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
-                }`}
+                key={feature.title}
+                className="p-8 rounded-xl border transition-all duration-300 bg-slate-800/50 border-slate-700 hover:border-blue-500 hover:bg-blue-600/20 hover:shadow-lg hover:shadow-blue-500/20 hover:scale-105 transform"
               >
                 <div className="text-blue-400 mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>

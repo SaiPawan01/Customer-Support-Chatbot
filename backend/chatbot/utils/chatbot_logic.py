@@ -21,7 +21,7 @@ load_dotenv()
 
 def get_gemini_model():
     return ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=os.getenv("GOOGLE_MODEL_NAME", "gemini-2.5-flash"),
         google_api_key=os.getenv("GOOGLE_API_KEY"),
         temperature=0.2,
         max_tokens=None,
@@ -30,7 +30,7 @@ def get_gemini_model():
 
 def get_groq_model():
     return ChatGroq(
-        model="qwen/qwen3-32b",
+        model=os.getenv("FALLBACK_MODEL_NAME", "openai/gpt-oss-120b"),
         temperature=0.2,
         groq_api_key=os.getenv("GROQ_API_KEY"),
         model_kwargs={

@@ -1,13 +1,11 @@
 import React, {useContext, useState} from 'react'
-import { Paperclip, FileText, ThumbsUp, ThumbsDown, Copy } from 'lucide-react'
 import { createConversation } from '../../api/bot.api';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChatbotContext } from '../../context/ChatbotContext';
+import { ChatbotContext } from '../../context/Context.jsx';
 
 function MessageArea() {
     const { messages,
-    setMessages,
     loading,
     messagesEndRef,
     newConversation,
@@ -37,7 +35,7 @@ function MessageArea() {
         try {
             const response = await createConversation(data);
             console.log(response.data.data)
-            if (response.data && response.data.data) {
+            if (response?.data?.data) {
                 setConversations(prev => [response.data.data, ...prev])
                 setActiveConversation(response.data.data.id)
                 setNewConversation(false);
@@ -50,7 +48,7 @@ function MessageArea() {
             console.log(`Error creating conversation: ${error}`);
         }
     }
-    if (activeConversation == null && newConversation == false) {
+    if (activeConversation == null && newConversation === false) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="text-center space-y-4">
@@ -73,8 +71,7 @@ function MessageArea() {
         return 'text-red-400';
       };
     
-    return <>
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+    return (<div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {newConversation ? (<div className="flex justify-center items-center h-full">
                 <div className="w-full max-w-xl bg-slate-700 rounded-3xl px-6 py-6 space-y-4 shadow-lg">
                     <p className="text-slate-300 text-sm">
@@ -101,7 +98,7 @@ function MessageArea() {
                     </form>
                     {error && <p className="text-red-400 text-sm">{error}</p>}
                 </div>
-            </div>) : (messages.messagesData || []).map((message, idx) => (
+            </div>) : (messages.messagesData || []).map((message) => (
                 <div
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -122,7 +119,7 @@ function MessageArea() {
                             </ReactMarkdown>
                         </div>
 
-                        {(escalationStatus.escalation == true && message.role == 'assistant' && escalationStatus.messageId === message.id) && <p>Need help from a human? Click the "Escalate Issue" button in the header to proceed.</p>}
+                        {(escalationStatus.escalation === true && message.role === 'assistant' && escalationStatus.messageId === message.id) && <p>Need help from a human? Click the "Escalate Issue" button in the header to proceed.</p>}
 
                         {/* Confidence Score & Sources (Bot only) */}
                         {message.role === 'assistant' &&
@@ -138,7 +135,7 @@ function MessageArea() {
                                     </div>
 
                                     {/* Sources */}
-                                    {(message.source && message.source.length) > 0 && (
+                                    {(message.source?.length) > 0 && (
                                         <div className="space-y-1">
                                             <p className="text-xs text-slate-400">Source:</p>
                                             {message.source.map((item, srcIdx) => (
@@ -174,8 +171,7 @@ function MessageArea() {
                     {/* <span className="text-lg">⚠️</span> */}
 
                     <p className="text-sm leading-relaxed">
-                        This conversation has been escalated. Please check your email—our support team will contact you shortly.
-
+                        This conversation has been escalated. Please check your email—our support team will contact you shortly.{" "}
                         <span className="text-amber-400 font-semibold ml-1">
                             Conversation ID: {activeConversation}
                         </span>
@@ -197,8 +193,7 @@ function MessageArea() {
             )}
 
             <div ref={messagesEndRef} />
-        </div>
-    </>
+        </div>)
 }
 
 

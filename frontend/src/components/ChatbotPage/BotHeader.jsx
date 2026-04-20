@@ -2,16 +2,16 @@ import React, { useState, useContext } from 'react';
 import { Menu, Trash2} from 'lucide-react'
 
 import Modal from './Modal';
-import { escalateToAgent } from '../../api/bot.api.js';
-import { deleteConversation } from '../../api/bot.api.js';
+import { escalateToAgent,deleteConversation } from '../../api/bot.api.js';
 
-import { ChatbotContext } from '../../context/ChatbotContext.jsx';
+import { ChatbotContext } from '../../context/Context.jsx';
 
 
 function BotHeader() {
     const {setShowSettings, setSidebarOpen, showSettings, activeConversation, setActiveConversation, setConversations, escalationStatus, setEscalationStatus, setMessages} = useContext(ChatbotContext);
     const [modalState, setModalState] = useState(false);
     const [convEscalationModalStatus, setConvEscalationModalStatus] = useState(false);
+
 
     const handleEscalationModalClose = () => {
       setConvEscalationModalStatus(prev => !prev)
@@ -30,12 +30,9 @@ function BotHeader() {
 
     const handleEscalation = (conversationId) => {
       try{
-        console.log(`Attempting to escalate conversation with ID: ${conversationId}`);
         const response = escalateToAgent(conversationId);
-        console.log("Escalation response:", response);
-        if(response.success == true){
+        if(response.success === true){
           alert("Issue escalated to human agent successfully.")
-          
         }
       }
       catch(error){

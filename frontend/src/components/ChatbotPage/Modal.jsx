@@ -1,7 +1,14 @@
 import { Trash2, X } from "lucide-react";
-import { deleteConversation } from "../../api/bot.api";
 
+import propTypes from "prop-types";
 
+Modal.propTypes = {
+    btnDisplayMessage: propTypes.string.isRequired,
+    displayMessage: propTypes.string.isRequired,
+    isOpen: propTypes.bool.isRequired,
+    handleModalClose: propTypes.func.isRequired,
+    handleModalConfirm: propTypes.func.isRequired
+};
 
 export default function Modal({btnDisplayMessage, displayMessage, isOpen, handleModalClose, handleModalConfirm})  {
     
@@ -11,7 +18,9 @@ export default function Modal({btnDisplayMessage, displayMessage, isOpen, handle
         <div className="fixed inset-0 z-50 flex items-center justify-center">
 
             {/* Backdrop */}
-            <div
+            <button
+                type="button"
+                aria-label="Close modal"
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                 onClick={handleModalClose}
             />

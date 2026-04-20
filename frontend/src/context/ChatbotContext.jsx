@@ -1,13 +1,15 @@
-import { createContext, useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 
 import { v4 as uuidv4 } from "uuid";
 
 import { fetchALLMessages } from "../api/sidebar.api";
 import { getBotReply } from "../api/bot.api";
 
-export const ChatbotContext = createContext({});
+import PropTypes from "prop-types";
 
-export function ChatbotContextProvider({ children }) {
+import { ChatbotContext } from "./Context.jsx";
+
+export default function ChatbotContextProvider({ children }) {
   const [messages, setMessages] = useState({
     messagesData: [],
     conversationStatus: "active",
@@ -30,7 +32,7 @@ export function ChatbotContextProvider({ children }) {
     try {
       const response = await fetchALLMessages(id);
       console.log(response);
-      if (response.data && response.data.data) {
+      if (response?.data?.data) {
         setMessages({
           messagesData: response.data.data,
           conversationStatus: status,
@@ -65,7 +67,7 @@ export function ChatbotContextProvider({ children }) {
     try {
       const response = await getBotReply(userMessage);
       console.log(response);
-      if (response.data && response.data.data) {
+      if (response?.data?.data) {
         const botReply = {
           id: response.data.data.id,
           role: "assistant",
@@ -74,7 +76,7 @@ export function ChatbotContextProvider({ children }) {
           source: response.data.data.source,
           confidence: response.data.data.confidence,
         };
-        if (response.data.data.escalation_status == true) {
+        if (response.data.data.escalation_status === true) {
           setEscalationStatus({ escalation: true, messageId: botReply.id });
         }
         setMessages((prev) => {
@@ -104,7 +106,7 @@ export function ChatbotContextProvider({ children }) {
     }
   };
 
-  const value = {
+  const value = useMemo(() => ({
     messages,
     setMessages,
     conversations,
@@ -128,8 +130,14 @@ export function ChatbotContextProvider({ children }) {
 
     fetchMessages,
     handleSendMessage,
-  };
+  }));
+
   return (
     <ChatbotContext.Provider value={value}>{children}</ChatbotContext.Provider>
   );
+}
+
+
+ChatbotContextProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 }

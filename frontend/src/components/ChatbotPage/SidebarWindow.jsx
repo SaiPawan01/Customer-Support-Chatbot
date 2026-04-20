@@ -1,12 +1,11 @@
-import React, { useEffect } from "react";
-import { useState, useContext } from "react";
-import {Plus, MessageCircle, LogOut, Search, Settings} from 'lucide-react'
+import React, { useEffect, useContext } from "react";
+import {Plus, MessageCircle, LogOut, Search} from 'lucide-react'
 import { useNavigate } from "react-router-dom";
 
 import { logoutUser } from '../../api/auth.api.js'
 import { fetchALLConversations } from "../../api/sidebar.api.js";
 
-import { ChatbotContext } from "../../context/ChatbotContext.jsx";
+import { ChatbotContext } from "../../context/Context.jsx";
 
 function SidebarWindow() {
     const { fetchMessages, activeConversation, setActiveConversation, setNewConversation, conversations, setConversations, setEscalationStatus} = useContext(ChatbotContext);
@@ -28,7 +27,7 @@ function SidebarWindow() {
        try{
          const response = await fetchALLConversations();
          console.log(response)
-         if(response.data && response.data.data){
+         if(response?.data?.data){
             setConversations(response.data.data)
          }
          else{
@@ -42,10 +41,9 @@ function SidebarWindow() {
 
     useEffect(() => {
         fetchConversations()
-    }, []);
+    });
 
-    return <>
-        <div
+    return <div
             className={"w-64 bg-slate-800 border-r border-slate-700 transition-all duration-300 overflow-hidden flex flex-col"}
         >
             {/* Logo */}
@@ -85,7 +83,7 @@ function SidebarWindow() {
                     <button
                         key={conv.id}
                         onClick={() =>{ 
-                            setActiveConversation(conv.id),
+                            setActiveConversation(conv.id);
                             setNewConversation(false);
                             fetchMessages(conv.id, conv.status);
                             setEscalationStatus({escalation: false, messageId: null});
@@ -109,7 +107,6 @@ function SidebarWindow() {
                 </button>
             </div>
         </div>
-    </>
 }
 
 

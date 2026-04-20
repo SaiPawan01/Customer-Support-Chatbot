@@ -1,15 +1,32 @@
 import React, { useState } from "react";
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Code } from 'lucide-react';
+import { User, ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser, loginUser, sendOtp, verifyOtp } from '../../api/auth.api.js';
 
+import EmailInput from "../../elements/EmailInput.jsx";
+import OtpInput from "../../elements/OtpInput.jsx";
+
+import PropTypes from 'prop-types';
+import PasswordInput from "../../elements/PasswordInput.jsx";
+
+Form.propTypes = {
+  isLogin: PropTypes.bool.isRequired,
+  setIsLogin: PropTypes.func.isRequired,
+  formData: PropTypes.object.isRequired,
+  setFormData: PropTypes.func.isRequired,
+  errors: PropTypes.object.isRequired,
+  setErrors: PropTypes.func.isRequired,
+}
+
+
 export default function Form({ isLogin, setIsLogin, formData, setFormData, errors, setErrors }) {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [showPassword, setShowPassword] = useState({password: false, confirmPassword: false});
   const [loading, setLoading] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+
 
 
   // Sends OTP to the user's email for verification during signup
@@ -17,11 +34,11 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
     try {
       const response = await sendOtp(formData.email);
       console.log(response.data)
-      if (response.data && response.data.success) {
+      if (response?.data?.success) {
         setOtpSent(true);
       }
-      else if (response.data && !response.data.success) {
-        setErrors(prev => ({ email: response.data.message || 'something went wrong' }));
+      else if (!response?.data?.success) {
+        setErrors({ email: response?.data?.message || 'something went wrong' });
       }
     } catch (error) {
       setErrors(prev => ({
@@ -31,27 +48,24 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
     }
   }
 
+
+
   // Verifies the OTP entered by the user during signup
   const handleOTPVerification = async () => {
     try {
       const response = await verifyOtp(formData.email, formData.otp);
-      console.log(response)
-      if (response.data.success) {
+      if (response?.data?.success) {
         setEmailVerified(true);
         setOtpSent(false);
       }
-
     } catch (error) {
-      const message = error.response?.data?.message || "Invalid OTP";
-
-      console.log("OTP Error:", message);
-
       setErrors(prev => ({
         ...prev,
-        otp: message
+        otp: error.response?.data?.message || "Invalid OTP"
       }));
     }
   };
+
 
 
   // Handles input changes for all form fields and clears errors for the specific field being edited
@@ -70,11 +84,14 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
   };
 
 
+
   // Validates email format using a regular expression
   const validateEmailRegex = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
     return emailRegex.test(email);
   };
+
+
 
   // Validates the email field and checks if it's verified during signup
   const validateEmail = (email, newErrors) => {
@@ -88,6 +105,8 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
     return newErrors;
   }
 
+
+
   // Validates the password field and checks for minimum length requirement
   const validatePassword = (password, newErrors) => {
     if (!formData.password) {
@@ -99,6 +118,110 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
   }
 
 
+
+  const validateRegisterFields = (newErrors) => {
+    if (formData.firstName === '') {
+      newErrors.firstName = 'First name is required';
+    }
+
+    if (formData.lastName === '') {
+      newErrors.lastName = 'Last name is required';
+    }
+
+    if (formData.confirmPassword === '') {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (formData.agreeTerms === false) {
+      newErrors.agreeTerms = 'You must agree to the terms';
+    }
+
+    return newErrors;
+  }
+
+
+  // handles user registration
+  const handleRegister = async () => {
+    formData.fullName = formData.firstName + formData.lastName;
+    const data = {
+      email: formData.email,
+      password: formData.password,
+      username: formData.fullName,
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+    };
+
+    try {
+      const response = await registerUser(data);
+      if (response?.data?.success) {
+        setLoading(false);
+        setIsLogin(true);
+        setEmailVerified(false);
+        setFormData({
+          email: '',
+          password: '',
+          confirmPassword: '',
+          firstName: '',
+          lastName: '',
+          agreeTerms: false,
+          otp: ''
+        });
+        setErrors({});
+      }
+    }
+    catch(error){
+      setErrors({
+        submit: error.response?.data?.message || 'Something went wrong. Please try again.'
+      });
+    }
+    finally{
+      setLoading(false);
+    }
+  }
+
+
+  // handles user login
+  const handleLogin = async () => {
+    try {
+      const response = await loginUser({
+        email: formData.email,
+        password: formData.password
+      });
+      if (response?.data?.success) {
+        localStorage.setItem('access_token', response.data.access_token);
+        console.log("Login successful:", response.data);
+        setLoading(false);
+        navigate('/chatbot');
+      }
+      else {
+        throw new Error(response?.data?.message);
+      }
+    }
+    catch (error) {
+      setErrors({
+        submit: error.message || 'An error occurred. Please try again.'
+      });
+    }
+    finally{
+      setLoading(false);
+    }
+  }
+
+
+  // Resets email verification and OTP status when the email field is changed
+  const handleEmailChange = (e) => {
+    handleInputChange(e)
+    if (emailVerified) {
+      setEmailVerified(false);
+    }
+    if (otpSent) {
+      setOtpSent(false);
+    }
+  }
+
+
   // Handles form submission for both login and signup
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,93 +230,40 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
     // Validation
     newErrors = validateEmail(formData.email, newErrors);
     newErrors = validatePassword(formData.password, newErrors);
-
-    if (!isLogin) {
-      if (!formData.firstName) {
-        newErrors.firstName = 'First name is required';
-      }
-      if (!formData.lastName) {
-        newErrors.lastName = 'Last name is required';
-      }
-      if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password';
-      } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-      if (!formData.agreeTerms) {
-        newErrors.agreeTerms = 'You must agree to the terms';
-      }
+    if (isLogin === false) {
+      newErrors = validateRegisterFields(newErrors);
     }
 
+    // If there are validation errors, set them in state and prevent form submission
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    setLoading(true);
     try {
       // post request to backend API for signup
-      if (!isLogin) {
-        formData.fullName = formData.firstName + formData.lastName;
-        const data = {
-          email: formData.email,
-          password: formData.password,
-          username: formData.fullName,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-
-        };
-        const response = await registerUser(data);
-        if (response.data && response.data.success) {
-          setLoading(false);
-          setIsLogin(true);
-          setEmailVerified(false);
-          setFormData({
-            email: '',
-            password: '',
-            confirmPassword: '',
-            firstName: '',
-            lastName: '',
-            agreeTerms: false,
-            otp: ''
-          });
-          setErrors({});
-        }
+      setLoading(true);
+      if (isLogin === false) {
+        await handleRegister();
       }
       else {
-        const response = await loginUser({
-          email: formData.email,
-          password: formData.password
-        });
-        console.log(response)
-        if (response.data && response.data.success) {
-          localStorage.setItem('access_token', response.data.access_token);
-          console.log("Login successful:", response.data);
-          setLoading(false);
-          navigate('/chatbot');
-        }
-        else{
-          throw new Error(response.data.message);
-        }
+        await handleLogin();
       }
     } catch (error) {
       setLoading(false);
-      setErrors(prev => ({
-        submit: error.response.data.message || 'An error occurred. Please try again.'
-      }));
+      setErrors({
+        submit: error.response?.data?.message || 'An error occurred. Please try again.'
+      });
     }
   };
 
-  return <form onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-    }
-  }} onSubmit={handleSubmit} className="space-y-3">
+  
+  return <form onSubmit={handleSubmit} className="space-y-3">
     {/* Full Name Field (Signup only) */}
     {!isLogin && (
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label htmlFor="firstName" className="block text-sm font-medium text-slate-300 mb-2">
             First Name
           </label>
           <div className="relative">
@@ -204,8 +274,7 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
               value={formData.firstName}
               onChange={handleInputChange}
               placeholder="John Doe"
-              className={`w-full pl-10 pr-4 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.fullName ? 'border-red-500' : 'border-slate-600'
-                }`}
+              className={`w-full pl-10 pr-4 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.fullName == null ? 'border-slate-600' : 'border-red-500'}`}
             />
           </div>
           {errors.firstName && (
@@ -214,7 +283,7 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label htmlFor="lastName" className="block text-sm font-medium text-slate-300 mb-2">
             Last Name
           </label>
           <div className="relative">
@@ -237,40 +306,10 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
       </div>
     )}
 
+
+
     {/* Email Field */}
-    <div>
-      <label className="block text-sm font-medium text-slate-300 mb-2">
-        Email Address
-      </label>
-      <div className="relative">
-        <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-        <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={(e) => {
-            handleInputChange(e)
-            if (emailVerified) {
-              setEmailVerified(false);
-            }
-            if (otpSent) {
-              setOtpSent(false);
-            }
-          }}
-          placeholder="you@example.com"
-          className={`${isLogin ? 'w-full' : (emailVerified ? 'w-full' : 'w-[75%]')} pl-10 pr-4 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.email ? 'border-red-500' : 'border-slate-600'
-            }`}
-        />
-        {(!emailVerified && !otpSent && !isLogin) && (
-          <button
-            type="button"
-            className="ml-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
-            onClick={handleEmailVerification}
-          >
-            Verify
-          </button>
-        )}
-      </div>
+    <EmailInput data={formData} errors={errors} handleInputChange={handleEmailChange} otpSent={otpSent} emailVerified={emailVerified} isLogin={isLogin} handleEmailVerification={handleEmailVerification}>
       {otpSent && !emailVerified && (
         <p className="text-yellow-400 text-sm mt-1">
           Please check your email for the OTP.
@@ -284,107 +323,26 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
       {errors.email && (
         <p className="text-red-400 text-sm mt-1">{errors.email}</p>
       )}
-    </div>
+    </EmailInput>
 
 
-    {(!isLogin && otpSent) && <div>
-      <label className="block text-sm font-medium text-slate-300 mb-2">
-        Enter OTP
-      </label>
-      <div className="relative">
-        <Code className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-        <input
-          type="text"
-          name="otp"
-          value={formData.otp}
-          onChange={handleInputChange}
-          placeholder="Enter six digit OTP..."
-          className={`${isLogin ? 'w-full' : 'w-[75%]'} pl-10 pr-4 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.email ? 'border-red-500' : 'border-slate-600'
-            }`}
-        />
-        {(!emailVerified && !isLogin) && (
-          <button
-            type="button"
-            className="ml-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
-            onClick={handleOTPVerification}
-          >
-            Verify
-          </button>
-        )}
-      </div>
+
+    {/* OTP Field */}
+    {(!isLogin && otpSent) && <OtpInput data={formData} errors={errors} handleInputChange={handleInputChange} isLogin={isLogin} emailVerified={emailVerified} handleOTPVerification={handleOTPVerification}>
       {errors.otp && (
         <p className="text-red-400 text-sm mt-1">{errors.otp}</p>
       )}
-    </div>}
+      </OtpInput>}
 
 
 
     {/* Password Field */}
-    <div>
-      <label className="block text-sm font-medium text-slate-300 mb-2">
-        Password
-      </label>
-      <div className="relative">
-        <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-        <input
-          type={showPassword ? 'text' : 'password'}
-          name="password"
-          value={formData.password}
-          onChange={handleInputChange}
-          placeholder="••••••••"
-          className={`w-full pl-10 pr-10 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.password ? 'border-red-500' : 'border-slate-600'
-            }`}
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 transition"
-        >
-          {showPassword ? (
-            <EyeOff className="w-5 h-5" />
-          ) : (
-            <Eye className="w-5 h-5" />
-          )}
-        </button>
-      </div>
-      {errors.password && (
-        <p className="text-red-400 text-sm mt-1">{errors.password}</p>
-      )}
-    </div>
+    <PasswordInput data={formData} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} />
+
 
     {/* Confirm Password Field (Signup only) */}
     {!isLogin && (
-      <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">
-          Confirm Password
-        </label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-          <input
-            type={showConfirmPassword ? 'text' : 'password'}
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            placeholder="••••••••"
-            className={`w-full pl-10 pr-10 py-2 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${errors.confirmPassword ? 'border-red-500' : 'border-slate-600'
-              }`}
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 transition"
-          >
-            {showConfirmPassword ? (
-              <EyeOff className="w-5 h-5" />
-            ) : (
-              <Eye className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-        {errors.confirmPassword && (
-          <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>
-        )}
-      </div>
+      <PasswordInput data={formData} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} confirmPassword={true}/>
     )}
 
     {/* Forgot Password Link (Login only) */}
@@ -411,11 +369,11 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
         />
         <label className="text-sm text-slate-300">
           I agree to the{' '}
-          <a href="#" className="text-blue-400 hover:text-blue-300">
+          <a href="/terms-of-service" className="text-blue-400 hover:text-blue-300">
             Terms of Service
           </a>{' '}
           and{' '}
-          <a href="#" className="text-blue-400 hover:text-blue-300">
+          <a href="/privacy-policy" className="text-blue-400 hover:text-blue-300">
             Privacy Policy
           </a>
         </label>

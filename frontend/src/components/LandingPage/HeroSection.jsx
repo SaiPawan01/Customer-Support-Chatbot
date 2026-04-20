@@ -16,20 +16,22 @@ function HeroSection() {
     }
     try {
       const response = await verifyToken(tok);
-      if (response.data && response.data.success) {
+      if (response.data?.success) {
         navigate('/chatbot');
         return;
       }
       navigate('/login');
     }
-    catch (error) {
+    catch (verifyError) {
+      console.error('Token verification failed:', verifyError);
       try{
         const data = await refreshToken();
-        console.log(`Refreshed token data: ${data}`);
+        console.log('Refreshed token data:', data);
         navigate('/chatbot');
         return;
       }
-      catch(refreshError){
+      catch (refreshError){
+        console.error('Token refresh failed:', refreshError);
         navigate('/login');
       }
     }
