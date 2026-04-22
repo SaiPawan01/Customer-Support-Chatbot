@@ -10,41 +10,54 @@ import Benefits from '../components/LandingPage/Benefits';
 
 export default function LandingPage() {
   useEffect(() => {
+    const SCRIPT_ID = "chatbot-widget-script";
+    const STYLE_ID = "chatbot-widget-style";
+
+
+    if (document.getElementById(SCRIPT_ID)) return;
+
+    // Create stylesheet
     const link = document.createElement("link");
+    link.id = STYLE_ID;
     link.rel = "stylesheet";
     link.href = "http://localhost:3000/chatbot-widget.css";
 
-    // ✅ Load JS
+    // Create script
     const script = document.createElement("script");
+    script.id = SCRIPT_ID;
     script.src = "http://localhost:3000/chatbot-widget.js";
     script.async = true;
 
+    script.integrity = import.meta.env.VITE_SCRIPT_INTEGRITY_HASH;
+    script.crossOrigin = "anonymous";
+
     script.onload = () => {
-      window.ChatbotWidget.init({
-        apiUrl: import.meta.env.VITE_API_URL,
-        clientId: "test123",
-      });
+      if (globalThis.ChatbotWidget?.init) {
+        globalThis.ChatbotWidget.init({
+          apiUrl: import.meta.env.VITE_API_URL,
+          clientId: "test123",
+        });
+      }
     };
 
     document.head.appendChild(link);
     document.body.appendChild(script);
 
     return () => {
-      // cleanup
       document.getElementById("chatbot-widget-root")?.remove();
-      link.remove();
-      script.remove();
+      document.getElementById(SCRIPT_ID)?.remove();
+      document.getElementById(STYLE_ID)?.remove();
     };
   }, []);
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-900 via-slate-800 to-slate-900">
-        <Navbar />
-        <HeroSection />
-        <StatsSection />
-        <Benefits />
-        <Features />
-        <Footer />
+      <Navbar />
+      <HeroSection />
+      <StatsSection />
+      <Benefits />
+      <Features />
+      <Footer />
     </div>
   );
 }

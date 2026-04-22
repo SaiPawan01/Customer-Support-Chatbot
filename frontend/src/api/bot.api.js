@@ -32,9 +32,10 @@ export const createConversation = (data) => {
 
 
 export const deleteConversation = (id) => {
+    const encoded_id = encodeURIComponent(id);
     const token = localStorage.getItem('access_token')
     if(token){
-        return api.delete(`api/chatbot/delete/conversation/${id}`,{
+        return api.delete(`api/chatbot/delete/conversation/${encoded_id}`,{
             headers:{
                 Authorization: `Bearer ${token}`
             }

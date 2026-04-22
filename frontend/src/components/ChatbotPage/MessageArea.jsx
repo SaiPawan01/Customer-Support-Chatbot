@@ -138,9 +138,9 @@ function MessageArea() {
                                     {(message.source?.length) > 0 && (
                                         <div className="space-y-1">
                                             <p className="text-xs text-slate-400">Source:</p>
-                                            {message.source.map((item, srcIdx) => (
+                                            {message.source.map((item) => (
                                                 <h6
-                                                    key={srcIdx}
+                                                    key={item}
                                                     className="text-xs text-blue-300 hover:text-blue-200 flex items-center gap-1 transition"
                                                 >
                                                     {item}

@@ -20,6 +20,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+CONVERSATION_ID_REQUIRED_MESSAGE = "Conversation ID is required."
+UNEXPECTED_ERROR_MESSAGE = "An unexpected error occurred."
 # Create your views here.
 
 # API view to create a new conversation.
@@ -40,7 +42,7 @@ class CreateConversationView(APIView):
 
     def post(self, request):
         print(f"!!! {request.headers}")
-        logger.info(f"Create Conversation API called")
+        logger.info("Create Conversation API called")
         try:
             serializer = ConversationRequestSerializer(data=request.data)
 
@@ -63,7 +65,7 @@ class CreateConversationView(APIView):
             ).save()
 
 
-            logger.info(f"Conversation created successfully.")
+            logger.info("Conversation created successfully.")
             return Response(ConversationResponseSerializer({
                 "success": True,
                 "message": "Conversation created successfully.",
@@ -111,13 +113,13 @@ class DeleteConversationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
-        logger.info(f"Delete Conversation API called")
+        logger.info("Delete Conversation API called")
         try:
             if not pk:
-                logger.warning(f"Delete Conversation API called without conversation ID")
+                logger.warning("Delete Conversation API called without conversation ID")
                 return Response(ResponseSerializer({
                         "success": False,
-                        "message": "Conversation ID is required.",
+                        "message": CONVERSATION_ID_REQUIRED_MESSAGE,
                         "data": None
                     }).data,
                     status=status.HTTP_400_BAD_REQUEST
@@ -130,7 +132,7 @@ class DeleteConversationView(APIView):
             )
             conversation.delete()
 
-            logger.info(f"Conversation with ID {pk} deleted successfully.")
+            logger.info("Conversation deleted successfully.")
             return Response(ResponseSerializer({
                 "success": True,
                 "message": "Conversation deleted successfully.",
@@ -140,7 +142,7 @@ class DeleteConversationView(APIView):
             )
 
         except ObjectDoesNotExist:
-            logger.warning(f"Conversation not found or user does not have permission to delete | conversation_id={pk}")
+            logger.warning("Conversation not found or user does not have permission to delete")
             return Response(ResponseSerializer({
                 "success": False,
                 "message": "Conversation not found or you do not have permission.",
@@ -150,7 +152,7 @@ class DeleteConversationView(APIView):
             )
 
         except DatabaseError:
-            logger.error(f"Database error while deleting conversation | conversation_id={pk}")
+            logger.error("Database error while deleting conversation")
             return Response(ResponseSerializer({
                 "success": False,
                 "message": "Database error occurred while deleting conversation.",
@@ -160,7 +162,7 @@ class DeleteConversationView(APIView):
             )
 
         except Exception as e:
-            logger.error(f"Unexpected error while deleting conversation | conversation_id={pk}, error={str(e)}")
+            logger.error(f"Unexpected error while deleting conversation | error={str(e)}")
             return Response(ResponseSerializer({
                 "success": False,
                 "message": "Something went wrong.",
@@ -199,21 +201,21 @@ class CreateMessageView(APIView):
 
     def post(self, request):
         try:
-            logger.info(f"Create Message API called")
+            logger.info("Create Message API called")
             user_query = request.data.get("message")
             conversation_id = request.data.get("conversation_id")
 
             if not user_query:
-                logger.warning(f"Create Message API called without message field")
+                logger.warning("Create Message API called without message field")
                 return self.error_response(
                     "Message field is required.",
                     code=status.HTTP_400_BAD_REQUEST
                 )
 
             if not conversation_id:
-                logger.warning(f"Create Message API called without conversation ID")
+                logger.warning("Create Message API called without conversation ID")
                 return self.error_response(
-                    "Conversation ID is required.",
+                    CONVERSATION_ID_REQUIRED_MESSAGE,
                     code=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -269,7 +271,7 @@ class CreateMessageView(APIView):
                     )
                 
 
-                logger.info(f"Calculating confidence score based on retrieved context similarity scores")
+                logger.info("Calculating confidence score based on retrieved context similarity scores")
                 if context:
                     confidence_score = sum(float(match['score']) for match in context) / len(context)
                 else:
@@ -285,7 +287,7 @@ class CreateMessageView(APIView):
                 )
 
 
-            logger.info(f"Message created successfully")
+            logger.info("Message created successfully")
             return Response(ResponseSerializer({
                     "success": True,
                     "message": "Message created and response generated successfully.",
@@ -312,7 +314,7 @@ class CreateMessageView(APIView):
         except Exception as e:
             logger.error(f"Unexpected error occurred, error={str(e)}")
             return self.error_response(
-                "Unexpected error occurred.",
+                UNEXPECTED_ERROR_MESSAGE,
                 error=e,
                 code= status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -338,14 +340,14 @@ class FetchAllMessage(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        logger.info(f"Fetch All Messages API called")
+        logger.info("Fetch All Messages API called")
         try:
             conversation_id = request.data.get("conversation_id")
             if not conversation_id:
-                logger.warning(f"Fetch All Messages API called without conversation ID")
+                logger.warning("Fetch All Messages API called without conversation ID")
                 return Response(ConversationListSerializer({
                         "success": False,
-                        "message": "Conversation ID is required.",
+                        "message": CONVERSATION_ID_REQUIRED_MESSAGE,
                         "data": None
                     }).data,
                     status=status.HTTP_400_BAD_REQUES)
@@ -413,7 +415,7 @@ class FetchAllMessage(APIView):
             logger.error(f"Unexpected error occurred while fetching messages, error={str(e)}")
             return Response(ConversationListSerializer({
                     "success": False,
-                    "message": "An unexpected error occurred.",
+                    "message": UNEXPECTED_ERROR_MESSAGE,
                     "data": None,
                 }).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -436,7 +438,7 @@ class FetchAllConversations(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        logger.info(f"Fetch All Conversations API called")
+        logger.info("Fetch All Conversations API called")
         try:
             conversations = (
                 Conversation.objects
@@ -487,7 +489,7 @@ class FetchAllConversations(APIView):
             logger.error(f"Unexpected error occurred while fetching conversations, error={str(e)}")
             return Response(ConversationListSerializer({
                     "success": False,
-                    "message": "An unexpected error occurred.",
+                    "message": UNEXPECTED_ERROR_MESSAGE,
                     "data": None
                 }).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -510,16 +512,16 @@ class EscalateToAgentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        logger.info(f"Escalate to Agent API called")
+        logger.info("Escalate to Agent API called")
         try:
             conversation_id = request.data.get("conversation_id")
             user_id = request.user.id
 
             if not conversation_id:
-                logger.warning(f"Escalate to Agent API called without conversation ID")
+                logger.warning("Escalate to Agent API called without conversation ID")
                 return Response(ResponseSerializer({
                         "success": False,
-                        "message": "Conversation ID is required."
+                        "message": CONVERSATION_ID_REQUIRED_MESSAGE
                     }).data,
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -556,7 +558,7 @@ class EscalateToAgentView(APIView):
                 conversation.status = "pending"
                 conversation.save()
 
-                logger.info(f"Message escalated to agent successfully and conversation status updated to pending.")
+                logger.info("Message escalated to agent successfully and conversation status updated to pending.")
                 return Response(ResponseSerializer({
                         "success": True,
                         "message": "Message escalated to agent successfully."
@@ -564,7 +566,7 @@ class EscalateToAgentView(APIView):
                     status=status.HTTP_200_OK
                 )
             else:
-                logger.error(f"Failed to send escalation email to agent.")
+                logger.error("Failed to send escalation email to agent.")
                 return Response(ResponseSerializer({
                         "success": False,
                         "message": "Failed to escalate message to agent."
@@ -594,7 +596,7 @@ class EscalateToAgentView(APIView):
             logger.error(f"Unexpected error occurred while escalating message, error={str(e)}")
             return Response(ResponseSerializer({
                     "success": False,
-                    "message": "An unexpected error occurred.",
+                    "message": UNEXPECTED_ERROR_MESSAGE,
                 }).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -616,9 +618,8 @@ class GenerateWidgetResponse(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        logger.info(f"Generate Widget Response API called")
+        logger.info("Generate Widget Response API called")
         message = request.data.get("message")
-        # history = request.data.get("history")
 
         try:
             context = get_relevant_chunks(message)
@@ -631,9 +632,9 @@ class GenerateWidgetResponse(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        logger.info(f"Generated relevant context for widget response")
+        logger.info("Generated relevant context for widget response")
         try:
-            response_obj, source = get_bot_reply(
+            response_obj, _ = get_bot_reply(
                 message,
                 context,
             )
@@ -645,7 +646,7 @@ class GenerateWidgetResponse(APIView):
             }).data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-        logger.info(f"Generated bot response for widget successfully")
+        logger.info("Generated bot response for widget successfully")
         return Response(ResponseSerializer({
                 "success": True,
                 "message": "Bot response generated successfully.",

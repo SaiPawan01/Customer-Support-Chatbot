@@ -14,6 +14,6 @@ export function init(config = {}) {
   root.render(<ChatWidget config={config} />);
 }
 
-if (typeof window !== "undefined") {
-  window.ChatbotWidget = { init };
+if (typeof globalThis !== "undefined") {
+  globalThis.ChatbotWidget = { init };
 }

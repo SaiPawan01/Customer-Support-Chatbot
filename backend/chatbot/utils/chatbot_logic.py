@@ -17,6 +17,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class ContextRetrievalError(RuntimeError):
+    """Raised when relevant context cannot be retrieved for a query."""
+
+
 load_dotenv()
 
 def get_gemini_model():
@@ -54,7 +58,7 @@ def get_relevant_chunks(query):
         vector = embeddings_model.embed_query(query)
     except Exception as e:
         logger.error(f"Error retrieving relevant chunks for query | error={str(e)}")
-        raise Exception("Error retrieving relevant context")
+        raise ContextRetrievalError("Error retrieving relevant context") from e
 
     results = index.query(
         vector=vector,
@@ -82,7 +86,7 @@ class SupportResponse(BaseModel):
 
 
 def get_bot_reply(user_query, context, history=[]):
-    logger.info(f"Generating bot reply for user query")
+    logger.info("Generating bot reply for user query")
     data = "\n\n".join(result["content"] for result in context)
     sources = {
         os.path.basename(result["metadata"]["source"])

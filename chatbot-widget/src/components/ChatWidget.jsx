@@ -1,6 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import { generateResponse } from "../api/api.js";
 
+
+import propTypes from "prop-types";
+
+ChatWidget.propTypes = {
+  config: propTypes.shape({
+    apiUrl: propTypes.string.isRequired,
+    clientId: propTypes.string.isRequired,
+    theme: propTypes.shape({
+      primary: propTypes.string,
+      background: propTypes.string,
+      surface: propTypes.string,
+      userBubble: propTypes.string,
+      botBubble: propTypes.string,
+      text: propTypes.string,
+    }),
+  }),
+}
+
 export default function ChatWidget({ config = {} }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState(() => {
@@ -111,9 +129,9 @@ export default function ChatWidget({ config = {} }) {
 
           {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto no-scrollbar space-y-3 text-[15px] scroll-smooth">
-            {messages.map((msg, i) => (
+            {messages.map((msg) => (
               <div
-                key={i}
+                key={msg.id}
                 className="max-w-[75%] px-4 py-3 rounded-xl"
                 style={{
                   marginLeft: msg.role === "user" ? "auto" : "0",

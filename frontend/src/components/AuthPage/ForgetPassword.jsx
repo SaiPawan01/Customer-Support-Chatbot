@@ -5,6 +5,7 @@ import { MessageCircle } from 'lucide-react';
 
 import EmailInput from "../../elements/EmailInput.jsx";
 import OtpInput from "../../elements/OtpInput.jsx";
+import PasswordInput from "../../elements/PasswordInput.jsx";
 
 export default function ForgotPassword() {
     const [data, setData] = useState({ "email": '', "otp": '', 'password': '', 'confirmPassword': '' });
@@ -175,10 +176,10 @@ export default function ForgotPassword() {
 
 
 
-                        {formStatus === 2 && <PasswordInput data={formData} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} />}
+                        {formStatus === 2 && <PasswordInput data={data} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} />}
 
 
-                        {formStatus === 2 && <PasswordInput data={formData} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} confirmPassword={true}/>}
+                        {formStatus === 2 && <PasswordInput data={data} errors={errors} handleInputChange={handleInputChange} showPassword={showPassword} setShowPassword={setShowPassword} confirmPassword={true}/>}
 
                         {formStatus == 3 && <p className="text-green-400 text-sm mt-1">Password reset successful!</p>}
 

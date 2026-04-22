@@ -17,8 +17,8 @@ function Benefits(){
                   "Seamless escalation workflow",
                   "Easy integration with existing systems",
                   "Continuous AI model improvement"
-                ].map((benefit, idx) => (
-                  <li key={idx} className="flex items-center gap-3 text-slate-300">
+                ].map((benefit) => (
+                  <li key={benefit} className="flex items-center gap-3 text-slate-300">
                     <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
                     {benefit}
                   </li>

@@ -33,7 +33,7 @@ export default function Form({ isLogin, setIsLogin, formData, setFormData, error
   const handleEmailVerification = async () => {
     try {
       const response = await sendOtp(formData.email);
-      console.log(response.data)
+
       if (response?.data?.success) {
         setOtpSent(true);
       }

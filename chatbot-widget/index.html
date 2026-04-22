@@ -9,25 +9,16 @@
 <body>
     <script src="./dist/chatbot-widget.js"></script>
     <script>
-      if (!window.ChatbotWidget || typeof window.ChatbotWidget.init !== "function") {
+      if (!globalThis.ChatbotWidget || typeof globalThis.ChatbotWidget.init !== "function") {
         console.error("ChatbotWidget did not load correctly.");
       } else {
-        window.ChatbotWidget.init({
+        globalThis.ChatbotWidget.init({
           apiUrl: "http://localhost:8000/api/chat/",
           clientId: "test123",
           theme: {
             background: '#000000'
           }
         });
-
-      //   const defaultTheme = {
-      //     primary: "#2563eb",
-      //     background: "#334155",
-      //     surface: "#1e293b",
-      //     userBubble: "#475569",
-      //     botBubble: "#1e293b",
-      //     text: "#f1f5f9",
-      //   };
       }
     </script>
 </body>

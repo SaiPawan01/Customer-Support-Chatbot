@@ -17,6 +17,9 @@ from .utils.otp_email_service import send_otp
 from .utils.redis_cache import store_otp, verify_otp
 from .models import User
 
+import string
+import secrets
+
 from drf_spectacular.utils import extend_schema
 
 import logging
@@ -291,7 +294,8 @@ class OTPGenerateView(APIView):
                 )
 
 
-            otp = random.randint(100000, 999999)
+            alphabet = string.ascii_letters + string.digits
+            otp = ''.join(secrets.choice(alphabet) for _ in range(6))
             success, error = send_otp(email, otp)
 
             if success:
@@ -395,7 +399,8 @@ class OTPGenerateForPasswordResetView(APIView):
                 return Response(ResponseSerializer({"success": False, "message": "Email not registered"}).data)
 
 
-            otp = random.randint(100000, 999999)
+            alphabet = string.ascii_letters + string.digits
+            otp = ''.join(secrets.choice(alphabet) for _ in range(6))
 
             success, error = send_otp(email, otp)
 
