@@ -36,7 +36,7 @@ export const deleteConversation = (id) => {
     if (!Number.isInteger(numericId) || numericId <= 0) {
         throw new Error("Invalid conversation id");
     }
-    const encoded_id = encodeURIComponent(id);
+    const encoded_id = encodeURIComponent(numericId);
     const token = localStorage.getItem('access_token')
     if(token){
         return api.delete(`api/chatbot/delete/conversation/${encoded_id}`,{
