@@ -32,6 +32,10 @@ export const createConversation = (data) => {
 
 
 export const deleteConversation = (id) => {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+        throw new Error("Invalid conversation id");
+    }
     const encoded_id = encodeURIComponent(id);
     const token = localStorage.getItem('access_token')
     if(token){
