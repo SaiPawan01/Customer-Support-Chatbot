@@ -42,7 +42,7 @@ export default function ChatWidget({ config = {} }) {
 
   const theme = {
     ...defaultTheme,
-    ...(config.theme || {})
+    ...config.theme
   };
 
   // Save chat
