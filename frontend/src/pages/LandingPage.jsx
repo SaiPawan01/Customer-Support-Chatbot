@@ -14,13 +14,13 @@ export default function LandingPage() {
     link.rel = "stylesheet";
     link.href = "http://localhost:3000/chatbot-widget.css";
 
-    // ✅ Load JS
+    
     const script = document.createElement("script");
     script.src = "http://localhost:3000/chatbot-widget.js";
     script.async = true;
 
     script.onload = () => {
-      window.ChatbotWidget.init({
+      globalThis.ChatbotWidget.init({
         apiUrl: import.meta.env.VITE_API_URL,
         clientId: "test123",
       });

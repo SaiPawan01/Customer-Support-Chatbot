@@ -5,10 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 def store_otp(email, otp):
-    # previous_otp = cache.get(f"otp:{email}")
-    # if(previous_otp):
-    #     cache.delete(f"otp:{email}")
-
     logger.info("Storing OTP for email in cache: %s", email)
 
     cache_key = f"otp:{email}"

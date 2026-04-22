@@ -26,7 +26,6 @@ function SidebarWindow() {
     const fetchConversations = async ()=>{
        try{
          const response = await fetchALLConversations();
-         console.log(response)
          if(response?.data?.data){
             setConversations(response.data.data)
          }
@@ -41,10 +40,10 @@ function SidebarWindow() {
 
     useEffect(() => {
         fetchConversations()
-    });
+    }, []);
 
     return <div
-            className={"w-64 bg-slate-800 border-r border-slate-700 transition-all duration-300 overflow-hidden flex flex-col"}
+            className="w-64 bg-slate-800 border-r border-slate-700 transition-all duration-300 overflow-hidden flex flex-col"
         >
             {/* Logo */}
             <div className="p-4 border-b border-slate-700 flex items-center gap-2">

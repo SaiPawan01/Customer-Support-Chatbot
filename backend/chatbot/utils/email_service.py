@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_conversation_html(messages, conversation_title):
-    logger.info(f"Building conversation HTML for email")
+    logger.info("Building conversation HTML for email")
 
     rows = ""
 
@@ -60,7 +60,7 @@ def build_conversation_html(messages, conversation_title):
 
 
 def send_email_to_agent(user_id, conversation_id, conversation_title, conversation_history, user_email, user_name):
-    logger.info(f"Sending email to agent for escalation")
+    logger.info("Sending email to agent for escalation")
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
         sib_api_v3_sdk.ApiClient(configuration)
     )
