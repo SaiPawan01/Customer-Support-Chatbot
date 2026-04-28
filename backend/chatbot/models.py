@@ -1,8 +1,6 @@
 from django.db import models
 from accounts.models import User
 
-from django.contrib.postgres.fields import ArrayField
-
 
 # Create your models here.
 class Conversation(models.Model):
@@ -35,10 +33,10 @@ class Message(models.Model):
     message = models.TextField()
 
     confidence_score = models.FloatField(blank=True, null=True)
-    source = ArrayField(
-        models.CharField(max_length=100),
+    source = models.JSONField(
         blank=True,
-        null=True
+        null=True,
+        default=list
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
