@@ -38,6 +38,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
         with:
           args: >-
+            -Dsonar.projectKey=SaiPawan01_Customer-Support-Chatbot
+            -Dsonar.organization=saipawan01
             -Dsonar.projectBaseDir=backend
             -Dsonar.sources=.
             -Dsonar.tests=.
