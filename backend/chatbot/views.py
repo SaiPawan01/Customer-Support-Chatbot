@@ -350,7 +350,7 @@ class FetchAllMessage(APIView):
                         "message": CONVERSATION_ID_REQUIRED_MESSAGE,
                         "data": None
                     }).data,
-                    status=status.HTTP_400_BAD_REQUES)
+                    status=status.HTTP_400_BAD_REQUEST)
 
 
             conversation = get_object_or_404(
