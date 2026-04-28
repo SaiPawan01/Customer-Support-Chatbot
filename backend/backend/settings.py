@@ -20,6 +20,10 @@ import dj_database_url
 
 load_dotenv()
 
+# Determine if we're in a test/CI environment without external .env file
+# In CI, if DB_URI is not set, use SQLite for tests
+IS_TEST_ENV = not os.getenv("DB_URI") and not os.getenv("POSTGRES_HOST")
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -182,22 +186,35 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 # Database configuration
 # Use SQLite for testing/development, PostgreSQL for production
-DB_URI = os.getenv("DB_URI", "sqlite:///db.sqlite3")
+DB_URI = os.getenv("DB_URI")
 
-if DB_URI.startswith("sqlite"):
+# In test environments (CI with no .env), use SQLite
+if IS_TEST_ENV or (DB_URI and DB_URI.startswith("sqlite")):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": DB_URI.replace("sqlite:///", ""),
+            "NAME": "test_db.sqlite3" if IS_TEST_ENV else DB_URI.replace("sqlite:///", ""),
         }
     }
-else:
+elif DB_URI:
     DATABASES = {
         "default": dj_database_url.config(
             default=DB_URI,
             conn_max_age=600,
             ssl_require=not DEBUG
         )
+    }
+else:
+    # Fallback to PostgreSQL config from .env if available
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "chatbot"),
+            "USER": os.getenv("DB_USER", "postgres"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
     }
 
 
