@@ -30,6 +30,8 @@ jobs:
 
       - name: Run backend tests with coverage
         working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: backend.settings
         run: |
           coverage run --source=accounts,chatbot,documents manage.py test accounts.test_app chatbot.test_app documents.test_app accounts.tests chatbot.tests
           coverage xml -o coverage.xml

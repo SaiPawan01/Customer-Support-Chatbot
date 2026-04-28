@@ -95,21 +95,21 @@ LOGGING = {
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-key-for-testing")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG').lower() == 'true'
+DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 
 # CORS settings
 # Allowed hosts (for Django security)
 CORS_ALLOW_ALL_ORIGINS = True
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 # CORS settings
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS").split(",")
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 
 CORS_ALLOW_METHODS = [
     "DELETE",
@@ -182,9 +182,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.getenv("DB_URI"),
+        default=os.getenv("DB_URI", "sqlite:///db.sqlite3"),
         conn_max_age=600,
-        ssl_require=True
+        ssl_require=False if DEBUG else True
     )
 }
 
@@ -195,7 +195,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.getenv("REDIS_LOCATION"),
+        "LOCATION": os.getenv("REDIS_LOCATION", "redis://127.0.0.1:6379/1"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
