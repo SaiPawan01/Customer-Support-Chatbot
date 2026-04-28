@@ -180,13 +180,25 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DB_URI", "sqlite:///db.sqlite3"),
-        conn_max_age=600,
-        ssl_require=False if DEBUG else True
-    )
-}
+# Database configuration
+# Use SQLite for testing/development, PostgreSQL for production
+DB_URI = os.getenv("DB_URI", "sqlite:///db.sqlite3")
+
+if DB_URI.startswith("sqlite"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": DB_URI.replace("sqlite:///", ""),
+        }
+    }
+else:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DB_URI,
+            conn_max_age=600,
+            ssl_require=not DEBUG
+        )
+    }
 
 
 # Password validation
